@@ -48,7 +48,7 @@ async fn main() -> std::io::Result<()> {
 
     let cfg = init_cfg();
 
-    println!("Initializing HTTP Server: {}", cfg.base64.listen);
+    println!("Initializing HTTP Listener: {}", cfg.base64.listen);
 
     HttpServer::new(|| {
         App::new()
