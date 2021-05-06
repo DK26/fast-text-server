@@ -7,7 +7,8 @@ use actix_web::{
 
 #[get("/")]
 pub async fn welcome() -> impl Responder {
-    HttpResponse::Ok().body("Welcome. I am Dr. Samuel Hayden, I'm the head of this facility. I think we can work together and resolve this problem in a way that benefits us both.")
+    HttpResponse::Ok().body("Welcome. I am Dr. Samuel Hayden, I'm the head of this facility. 
+    I think we can work together and resolve this problem in a way that benefits us both.")
 }
 
 #[post("/echo")]
