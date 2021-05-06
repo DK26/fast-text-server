@@ -19,9 +19,6 @@ async fn main() -> std::io::Result<()> {
 
     let cfg = init_cfg();
 
-    println!("Test: {}", cfg.common.alt_encoding);
-
-
     println!("Initializing HTTP Listener: {}", cfg.base64.listen);
 
     HttpServer::new(|| {
