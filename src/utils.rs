@@ -139,6 +139,50 @@ pub fn decode_bytes(src: &[u8], encoding: &str, trap: DecoderTrap) -> UTF8String
             all::MAC_CYRILLIC.decode_to(src, trap, &mut src_decoded).unwrap();
             src_decoded
         },
+        "ascii" => {
+            all::ASCII.decode_to(src, trap, &mut src_decoded).unwrap();
+            src_decoded
+        },
+        "big5-2003" => {
+            all::BIG5_2003.decode_to(src, trap, &mut src_decoded).unwrap();
+            src_decoded
+        },
+        "euc-jp" => {
+            all::EUC_JP.decode_to(src, trap, &mut src_decoded).unwrap();
+            src_decoded
+        },
+        "gb18030" => {
+            all::GB18030.decode_to(src, trap, &mut src_decoded).unwrap();
+            src_decoded
+        },
+        "gbk" => {
+            all::GBK.decode_to(src, trap, &mut src_decoded).unwrap();
+            src_decoded
+        },
+        "hz" => {
+            all::HZ.decode_to(src, trap, &mut src_decoded).unwrap();
+            src_decoded
+        },
+        "iso-2022_jp" => {
+            all::ISO_2022_JP.decode_to(src, trap, &mut src_decoded).unwrap();
+            src_decoded
+        },
+        "uft-16be" => {
+            all::UTF_16BE.decode_to(src, trap, &mut src_decoded).unwrap();
+            src_decoded
+        },
+        "uft-16le" => {
+            all::UTF_16LE.decode_to(src, trap, &mut src_decoded).unwrap();
+            src_decoded
+        },
+        "windows-31j" => {
+            all::WINDOWS_31J.decode_to(src, trap, &mut src_decoded).unwrap();
+            src_decoded
+        },
+        "windows-949" => {
+            all::WINDOWS_949.decode_to(src, trap, &mut src_decoded).unwrap();
+            src_decoded
+        }
         _ => { src.as_utf8() }
     };
 
