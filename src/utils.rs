@@ -15,6 +15,39 @@ pub fn to_utf8_lossy(src: &[u8]) -> UTF8String {
     String::from_utf8_lossy(src).to_string()
 }
 
+pub trait Reverse {
+    fn reverse(&self) -> String;
+}
+
+
+pub trait DecodeUTF8 {
+    fn decode(&self, encoding: &str, trap: DecoderTrap) -> UTF8String;
+}
+
+
+pub trait AsUTF8 {
+    fn as_utf8(&self) -> UTF8String;
+}
+
+impl AsUTF8 for &[u8] {
+    fn as_utf8(&self) -> UTF8String {
+        to_utf8_lossy(self)
+    }
+}
+
+impl Reverse for str {
+    fn reverse(&self) -> String {
+        reverse_str(&self)
+    }
+}
+
+impl DecodeUTF8 for &[u8] {
+    fn decode(&self, encoding: &str, trap: DecoderTrap) -> UTF8String {
+        decode_bytes(self, encoding, trap)
+    }
+}
+
+
 pub fn decode_bytes(src: &[u8], encoding: &str, trap: DecoderTrap) -> UTF8String { 
 
     let encoding = String::from(encoding).trim().to_lowercase();
@@ -187,34 +220,4 @@ pub fn decode_bytes(src: &[u8], encoding: &str, trap: DecoderTrap) -> UTF8String
     };
 
     result 
-}
-
-pub trait Reverse {
-    fn reverse(&self) -> String;
-}
-
-impl Reverse for str {
-    fn reverse(&self) -> String {
-        reverse_str(&self)
-    }
-}
-
-pub trait AsUTF8 {
-    fn as_utf8(&self) -> UTF8String;
-}
-
-impl AsUTF8 for &[u8] {
-    fn as_utf8(&self) -> UTF8String {
-        to_utf8_lossy(self)
-    }
-}
-
-pub trait DecodeUTF8 {
-    fn decode(&self, encoding: &str, trap: DecoderTrap) -> UTF8String;
-}
-
-impl DecodeUTF8 for &[u8] {
-    fn decode(&self, encoding: &str, trap: DecoderTrap) -> UTF8String {
-        decode_bytes(self, encoding, trap)
-    }
 }
