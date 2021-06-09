@@ -3,10 +3,7 @@ use std::{
     fs::File, 
     io::Read
 };
-use std::{
-    env::current_exe, 
-    path::PathBuf
-};
+use std::env::current_exe;
 
 #[derive(Deserialize)]
 pub struct Config {
