@@ -1,5 +1,5 @@
 [package]
-name = "ms-base64"
+name = "fast-webhooks"
 version = "0.1.0"
 authors = ["David Krasnitsky <dikaveman@gmail.com>"]
 edition = "2018"

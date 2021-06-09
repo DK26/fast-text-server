@@ -1,5 +1,5 @@
 [common]
 alt_encoding = "windows-1255"  # If decoding to UTF-8 fails, this will be attempted.
 
-[base64]
+[service]
 listen = "127.0.0.1:8080"

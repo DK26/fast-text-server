@@ -7,17 +7,17 @@ use std::env::current_exe;
 
 #[derive(Deserialize)]
 pub struct Config {
-    pub common: Common,
-    pub base64: Base64Config
+    pub common: CommonConfig,
+    pub service: ServiceConfig
 }
 
 #[derive(Deserialize)]
-pub struct Common {
+pub struct CommonConfig {
     pub alt_encoding: String
 }
 
 #[derive(Deserialize)]
-pub struct Base64Config {
+pub struct ServiceConfig {
     pub listen: String
 }
 

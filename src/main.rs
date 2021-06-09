@@ -2,7 +2,7 @@
 extern crate lazy_static;
 
 mod cfglib;
-mod base64;
+mod services;
 mod utils;
 
 use cfglib::*;
@@ -22,15 +22,15 @@ async fn main() -> std::io::Result<()> {
 
     // let cfg = init_cfg();
 
-    println!("Initializing HTTP Listener: {}", CFG.base64.listen);
+    println!("Initializing HTTP Listener: {}", CFG.service.listen);
 
     HttpServer::new(|| {
         App::new()
-            .service(base64::welcome)
-            .service(base64::echo)
-            .service(base64::unescape)
+            .service(services::welcome)
+            .service(services::echo)
+            .service(services::unescape)
     })
-    .bind(&CFG.base64.listen)?
+    .bind(&CFG.service.listen)?
     .run()
     .await
 
