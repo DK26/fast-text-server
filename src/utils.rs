@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use std::collections::VecDeque;
 use std::char;
 use encoding::{
@@ -355,8 +356,6 @@ fn unescape_octal_no_leading(c: char, queue: &mut VecDeque<char>) -> Option<char
 pub fn attempt_decode(src: &[u8]) -> UTF8String {
     match std::str::from_utf8(src) {
         Ok(utf8_result) => utf8_result.to_owned(),
-        Err(_) => { 
-            decode_bytes(src, &CFG.common.alt_encoding,DecoderTrap::Replace) 
-        }
+        Err(_) => decode_bytes(src, &CFG.common.alt_encoding,DecoderTrap::Replace) 
     }
 }
