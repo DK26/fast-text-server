@@ -18,9 +18,8 @@ lazy_static! {
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
 
+    // TODO: Implement with logger
     println!("Initializing service...");
-
-    // let cfg = init_cfg();
 
     println!("Initializing HTTP Listener: {}", CFG.service.listen);
 
@@ -29,6 +28,9 @@ async fn main() -> std::io::Result<()> {
             .service(services::welcome)
             .service(services::echo)
             .service(services::unescape)
+            // .service(services::form_test)
+            // .service(services::json_test)
+            .service(services::unescape_decode)
     })
     .bind(&CFG.service.listen)?
     .run()
