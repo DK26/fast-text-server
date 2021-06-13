@@ -31,6 +31,8 @@ async fn main() -> std::io::Result<()> {
             // .service(services::form_test)
             // .service(services::json_test)
             .service(services::unescape_decode)
+            .service(services::decode_base64)
+            .service(services::decode_base64_encoding)
     })
     .bind(&CFG.service.listen)?
     .run()

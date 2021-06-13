@@ -6,7 +6,7 @@ use actix_web::{
     Responder,
     web,
 };
-
+use base64::decode;
 use crate::utils;
 
 #[get("/welcome")]
@@ -25,19 +25,51 @@ pub async fn unescape(req_body: String) -> impl Responder {
 
     let unescaped_req_body = utils::unescape_as_bytes(&req_body).expect("Unable to unescape request's body.");
 
-    let response = utils::attempt_decode(&unescaped_req_body);
+    let response = utils::attempt_decode(&unescaped_req_body, "utf-8").unwrap();
 
     HttpResponse::Ok().body(response)
 
 }
 
-
-#[post("/unescape/{decode}")]
-pub async fn unescape_decode(web::Path((decode,)): web::Path<(String,)>, req_body: String) -> impl Responder {
+#[post("/unescape/{encoding}")]
+pub async fn unescape_decode(web::Path((encoding,)): web::Path<(String,)>, req_body: String) -> impl Responder {
 
     let unescaped_req_body = utils::unescape_as_bytes(&req_body).expect("Unable to unescape request's body.");
 
-    let response = utils::decode_bytes(&unescaped_req_body, &decode, utils::DEFAULT_DECODER_TRAP);
+    // let response = utils::decode_bytes(&unescaped_req_body, &encoding, utils::DEFAULT_DECODER_TRAP).unwrap();
+
+    let response = utils::attempt_decode(&unescaped_req_body, &encoding).unwrap();
+
+    HttpResponse::Ok().body(response)
+
+}
+
+#[post("/decode_base64")]
+pub async fn decode_base64(req_body: String) -> impl Responder {
+
+    let raw_payload = &decode(&req_body).expect("Unable to decode base64.");
+
+    // let unescaped_req_body = utils::unescape_as_bytes(&raw_payload).expect("Unable to unescape request's body.");
+
+    // let response = match utils::decode_bytes(&raw_payload, "utf-8", utils::DEFAULT_DECODER_TRAP) {
+    //     Ok(decoded_value) => decoded_value,
+    //     Err(_) => utils::decode_bytes(&raw_payload, &CFG.common.alt_encoding, utils::DEFAULT_DECODER_TRAP).unwrap()
+    // };
+
+    let response = utils::attempt_decode(&raw_payload, "utf-8").unwrap();
+
+    HttpResponse::Ok().body(response)
+
+}
+
+#[post("/decode_base64/{encoding}")]
+pub async fn decode_base64_encoding(web::Path((encoding,)): web::Path<(String,)>, req_body: String) -> impl Responder {
+
+    let raw_payload = &decode(&req_body).expect("Unable to decode base64.");
+
+    // let response = utils::decode_bytes(&raw_payload, &encoding, utils::DEFAULT_DECODER_TRAP).unwrap();
+
+    let response = utils::attempt_decode(&raw_payload, &encoding).unwrap();
 
     HttpResponse::Ok().body(response)
 
