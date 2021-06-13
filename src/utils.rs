@@ -2,7 +2,7 @@
 use std::borrow::Cow;
 use std::collections::VecDeque;
 use std::char;
-use std::string::FromUtf8Error;
+// use std::string::FromUtf8Error;
 use encoding::{
     DecoderTrap, 
     Encoding, 
@@ -28,7 +28,7 @@ pub type UTF8String = String;
 
 pub type DecodingResult = Result<UTF8String, Cow<'static, str>>;
 
-pub type UTF8Result = Result<UTF8String, FromUtf8Error>;
+// pub type UTF8Result = Result<UTF8String, FromUtf8Error>;
 
 pub fn reverse_str(src: &str) -> String {
     src.chars().rev().collect()

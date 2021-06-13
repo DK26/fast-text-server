@@ -8,6 +8,7 @@ use actix_web::{
 };
 use base64::decode;
 use crate::utils;
+use crate::DEFAULT_ENCODING;
 
 #[get("/welcome")]
 pub async fn welcome() -> impl Responder {
@@ -25,7 +26,7 @@ pub async fn unescape(req_body: String) -> impl Responder {
 
     let unescaped_req_body = utils::unescape_as_bytes(&req_body).expect("Unable to unescape request's body.");
 
-    let response = utils::attempt_decode(&unescaped_req_body, "utf-8").unwrap();
+    let response = utils::attempt_decode(&unescaped_req_body, &DEFAULT_ENCODING).unwrap();
 
     HttpResponse::Ok().body(response)
 
@@ -56,7 +57,7 @@ pub async fn decode_base64(req_body: String) -> impl Responder {
     //     Err(_) => utils::decode_bytes(&raw_payload, &CFG.common.alt_encoding, utils::DEFAULT_DECODER_TRAP).unwrap()
     // };
 
-    let response = utils::attempt_decode(&raw_payload, "utf-8").unwrap();
+    let response = utils::attempt_decode(&raw_payload, &DEFAULT_ENCODING).unwrap();
 
     HttpResponse::Ok().body(response)
 

@@ -13,6 +13,7 @@ use actix_web::{
 
 lazy_static! {
     static ref CFG: Config = init_cfg();
+    static ref DEFAULT_ENCODING: &'static str = "utf-8";
 }
 
 #[actix_web::main]
