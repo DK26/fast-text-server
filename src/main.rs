@@ -13,8 +13,9 @@ use actix_web::{
 
 lazy_static! {
     static ref CFG: Config = init_cfg();
-    static ref DEFAULT_ENCODING: &'static str = "utf-8";
 }
+
+pub const DEFAULT_ENCODING : &'static str = "utf-8";
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -34,9 +35,10 @@ async fn main() -> std::io::Result<()> {
             .service(services::unescape_decode)
             .service(services::decode_base64)
             .service(services::decode_base64_encoding)
+            .service(services::decode_base64_mime)
     })
     .bind(&CFG.service.listen)?
     .run()
     .await
-
+    
 }

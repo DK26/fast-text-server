@@ -53,7 +53,6 @@ pub trait DecodeUTF8 {
     fn decode(&self, encoding: &str, trap: DecoderTrap) -> DecodingResult;
 }
 
-
 pub trait AsUTF8Lossy {
     fn as_utf8_lossy(&self) -> UTF8String;
 }
@@ -85,7 +84,6 @@ impl DecodeUTF8 for &[u8] {
         decode_bytes(self, encoding, trap)
     }
 }
-
 
 pub fn decode_bytes(src: &[u8], encoding: &str, trap: DecoderTrap) -> DecodingResult  { 
 
@@ -395,4 +393,61 @@ pub fn attempt_decode(src: &[u8], encoding: &str) -> DecodingResult {
     //     Err(_) => Ok(decode_bytes(src, &CFG.common.alt_encoding, DEFAULT_DECODER_TRAP)?)
     // }
 
+}
+
+pub fn decode_mime_subject(src: &str) -> DecodingResult {
+
+    let mut collect = false;  
+
+    let mut scanning_encoding = true;
+
+    let mut has_encoding = false; // If has codec, skip scan only for base64
+
+    let mut encoding = String::new();
+
+    let mut payload = String::new();
+
+    let mut decoded_payload = Vec::<u8>::new();
+
+    // for char in String::from_utf8_lossy(&msg_1).chars() {
+    for char in src.chars() {
+        match char {
+            '?' => {
+                // We were collecting and now it's time to sum-up
+                if collect { 
+
+                    scanning_encoding = !scanning_encoding;
+
+                    // If No encoding was found yet
+                    if !has_encoding { 
+                        
+                        // Encoding was collected
+                        has_encoding = true;
+
+                    }  else  { // Base64 payload was collected
+    
+                        let decoded_item = base64::decode(&payload).unwrap();
+
+                        payload.clear();
+
+                        decoded_payload.extend(decoded_item);
+    
+                    }
+                }
+                collect = !collect;  // flip
+            },
+            '\\' => {}, 
+            _ => {
+                if collect {
+                    if !has_encoding {
+                        encoding.push(char);
+                    } else if !scanning_encoding {
+                        payload.push(char);
+                    }
+                }
+            }
+        } // match char
+    } // for src.chars()
+
+    attempt_decode(&decoded_payload, &encoding)
 }

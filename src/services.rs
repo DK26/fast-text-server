@@ -6,7 +6,7 @@ use actix_web::{
     Responder,
     web,
 };
-use base64::decode;
+
 use crate::utils;
 use crate::DEFAULT_ENCODING;
 
@@ -37,8 +37,6 @@ pub async fn unescape_decode(web::Path((encoding,)): web::Path<(String,)>, req_b
 
     let unescaped_req_body = utils::unescape_as_bytes(&req_body).expect("Unable to unescape request's body.");
 
-    // let response = utils::decode_bytes(&unescaped_req_body, &encoding, utils::DEFAULT_DECODER_TRAP).unwrap();
-
     let response = utils::attempt_decode(&unescaped_req_body, &encoding).unwrap();
 
     HttpResponse::Ok().body(response)
@@ -48,14 +46,7 @@ pub async fn unescape_decode(web::Path((encoding,)): web::Path<(String,)>, req_b
 #[post("/decode_base64")]
 pub async fn decode_base64(req_body: String) -> impl Responder {
 
-    let raw_payload = &decode(&req_body).expect("Unable to decode base64.");
-
-    // let unescaped_req_body = utils::unescape_as_bytes(&raw_payload).expect("Unable to unescape request's body.");
-
-    // let response = match utils::decode_bytes(&raw_payload, "utf-8", utils::DEFAULT_DECODER_TRAP) {
-    //     Ok(decoded_value) => decoded_value,
-    //     Err(_) => utils::decode_bytes(&raw_payload, &CFG.common.alt_encoding, utils::DEFAULT_DECODER_TRAP).unwrap()
-    // };
+    let raw_payload = base64::decode(&req_body).expect("Unable to decode base64.");
 
     let response = utils::attempt_decode(&raw_payload, &DEFAULT_ENCODING).unwrap();
 
@@ -66,15 +57,24 @@ pub async fn decode_base64(req_body: String) -> impl Responder {
 #[post("/decode_base64/{encoding}")]
 pub async fn decode_base64_encoding(web::Path((encoding,)): web::Path<(String,)>, req_body: String) -> impl Responder {
 
-    let raw_payload = &decode(&req_body).expect("Unable to decode base64.");
-
-    // let response = utils::decode_bytes(&raw_payload, &encoding, utils::DEFAULT_DECODER_TRAP).unwrap();
+    let raw_payload = base64::decode(&req_body).expect("Unable to decode base64.");
 
     let response = utils::attempt_decode(&raw_payload, &encoding).unwrap();
 
     HttpResponse::Ok().body(response)
 
 }
+
+#[post("/decode_base64_mime")]
+pub async fn decode_base64_mime(req_body: String) -> impl Responder {
+
+    let response = utils::decode_mime_subject(&req_body).unwrap();
+
+    HttpResponse::Ok().body(response)
+
+}
+
+
 
 // #[derive(Deserialize, Debug)]
 // pub struct TestData {
