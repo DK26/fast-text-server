@@ -35,10 +35,10 @@ async fn main() -> std::io::Result<()> {
             .service(services::unescape_decode)
             .service(services::decode_base64)
             .service(services::decode_base64_encoding)
-            .service(services::decode_base64_mime)
+            .service(services::decode_mime_subject)
     })
     .bind(&CFG.service.listen)?
     .run()
     .await
-    
+
 }

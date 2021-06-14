@@ -65,8 +65,8 @@ pub async fn decode_base64_encoding(web::Path((encoding,)): web::Path<(String,)>
 
 }
 
-#[post("/decode_base64_mime")]
-pub async fn decode_base64_mime(req_body: String) -> impl Responder {
+#[post("/decode_mime_subject")]
+pub async fn decode_mime_subject(req_body: String) -> impl Responder {
 
     let response = utils::decode_mime_subject(&req_body).unwrap();
 
