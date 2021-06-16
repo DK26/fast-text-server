@@ -8,7 +8,8 @@ use std::env::current_exe;
 #[derive(Deserialize)]
 pub struct Config {
     pub common: CommonConfig,
-    pub service: ServiceConfig
+    pub service: ServiceConfig,
+    pub cache: CacheConfig,
 }
 
 #[derive(Deserialize)]
@@ -19,6 +20,11 @@ pub struct CommonConfig {
 #[derive(Deserialize)]
 pub struct ServiceConfig {
     pub listen: String
+}
+
+#[derive(Deserialize)]
+pub struct CacheConfig {
+    pub regex_patterns_limit: usize,
 }
 
 pub fn init_cfg() -> Config {

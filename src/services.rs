@@ -1,4 +1,4 @@
-// use serde::Deserialize;
+use serde::Deserialize;
 use actix_web::{
     get,
     post,
@@ -9,6 +9,14 @@ use actix_web::{
 
 use crate::utils;
 use crate::DEFAULT_ENCODING;
+use crate::PATTERNS_CACHE;
+
+#[derive(Deserialize, Debug)]
+pub struct RegexData {
+    payload: String,
+    pattern: String,
+    // join: String,
+}
 
 #[get("/welcome")]
 pub async fn welcome() -> impl Responder {
@@ -74,7 +82,19 @@ pub async fn decode_mime_subject(req_body: String) -> impl Responder {
 
 }
 
+#[post("/regex_capture_group")]
+pub async fn regex_capture_group(request: web::Json<RegexData>) -> impl Responder { 
+    
+    let mut patterns = PATTERNS_CACHE.write();
 
+    let re = patterns.get(&request.pattern);
+
+    let caps = re.captures(&request.payload).unwrap();
+
+    let response = caps.get(1).unwrap().as_str().to_owned();
+
+    HttpResponse::Ok().body(response)
+}
 
 // #[derive(Deserialize, Debug)]
 // pub struct TestData {

@@ -4,15 +4,25 @@ extern crate lazy_static;
 mod cfglib;
 mod services;
 mod utils;
+use parking_lot::RwLock;
 
 use cfglib::*;
+use utils::PatternsCache;
 use actix_web::{
     HttpServer,
     App
 };
 
 lazy_static! {
+
     static ref CFG: Config = init_cfg();
+
+    static ref PATTERNS_CACHE: RwLock<PatternsCache> = {
+        let cache = PatternsCache::new()
+            .limit(CFG.cache.regex_patterns_limit); 
+        RwLock::new(cache)
+    };
+
 }
 
 pub const DEFAULT_ENCODING : &'static str = "utf-8";
@@ -36,6 +46,7 @@ async fn main() -> std::io::Result<()> {
             .service(services::decode_base64)
             .service(services::decode_base64_encoding)
             .service(services::decode_mime_subject)
+            .service(services::regex_capture_group)
     })
     .bind(&CFG.service.listen)?
     .run()

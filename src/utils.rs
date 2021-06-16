@@ -1,7 +1,10 @@
 #![allow(dead_code)]
+use std::collections::HashMap;
 use std::borrow::Cow;
 use std::collections::VecDeque;
 use std::char;
+use regex::Regex;
+
 // use std::string::FromUtf8Error;
 use encoding::{
     DecoderTrap, 
@@ -450,4 +453,73 @@ pub fn decode_mime_subject(src: &str) -> DecodingResult {
     } // for src.chars()
 
     attempt_decode(&decoded_payload, &encoding)
+}
+
+pub struct PatternsCache {
+    map: HashMap<String, Regex>,
+    limit: usize,
+    size: usize
+}
+
+#[allow(dead_code)]
+impl<'a> PatternsCache {
+
+    pub fn new() -> Self {
+        Self {
+            map: HashMap::new(),
+            limit: 0,
+            size: 0,
+        }
+    }
+
+    pub fn limit(mut self, value: usize) -> Self {
+        self.limit = value;
+        self
+    }
+    
+    pub fn get<'b, 'c>(&'a mut self, pattern: &'c str) -> &'b Regex 
+    where 'a: 'b {
+
+        let mut current_size = self.map.len();
+        
+
+        if self.limit > 0 && current_size == self.limit {
+            self.map.clear();
+            current_size = 0;
+        }
+   
+        let result = self.map.entry(pattern.to_owned()).or_insert_with(|| {
+            current_size += 1; 
+            Regex::new(&pattern).unwrap()
+        });
+
+        self.size = current_size;
+
+        result
+    }
+
+    pub fn len(&self) -> usize {
+        self.size
+    }
+
+    pub fn get_limit(&self) -> usize {
+        self.limit
+    }
+
+    pub fn is_limited(&self) -> bool {
+        self.limit > 0
+    }
+
+    pub fn reached_limit(&self) -> bool {
+        self.size >= self.limit
+    }
+
+    pub fn clear(&mut self) {
+
+        {
+            self.map.clear();
+        }
+        self.size = 0;
+    }
+
 }

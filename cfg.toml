@@ -3,3 +3,6 @@ alt_encoding = "windows-1255"  # If decoding to UTF-8 fails, this will be attemp
 
 [service]
 listen = "127.0.0.1:8080"
+
+[cache]
+regex_patterns_limit = 10000
