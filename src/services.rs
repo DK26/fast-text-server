@@ -13,7 +13,7 @@ use crate::PATTERNS_CACHE;
 
 #[derive(Deserialize, Debug)]
 pub struct RegexData {
-    payload: String,
+    text: String,
     pattern: String,
     // join: String,
 }
@@ -85,11 +85,11 @@ pub async fn decode_mime_subject(req_body: String) -> impl Responder {
 #[post("/regex_capture_group")]
 pub async fn regex_capture_group(request: web::Json<RegexData>) -> impl Responder { 
     
-    let mut patterns = PATTERNS_CACHE.write();
+    let mut patterns_cache = PATTERNS_CACHE.write();
 
-    let re = patterns.get(&request.pattern);
+    let re = patterns_cache.get(&request.pattern);
 
-    let caps = re.captures(&request.payload).unwrap();
+    let caps = re.captures(&request.text).unwrap();
 
     let response = caps.get(1).unwrap().as_str().to_owned();
 
