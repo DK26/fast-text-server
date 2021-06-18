@@ -6,3 +6,4 @@ listen = "127.0.0.1:8080"
 
 [cache]
 regex_patterns_limit = 10000
+regex_patterns_capacity = 10000

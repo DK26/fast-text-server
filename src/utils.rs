@@ -380,7 +380,7 @@ fn unescape_octal_no_leading(c: char, queue: &mut VecDeque<char>) -> Option<char
 
 /// Attempt to decode given `src` bytes slice into a given encoding format. 
 /// If fails, attempt to use alternative encoding `alt_encoding` from `cfg.toml`. 
-/// If fails again, return a lossy UTF-8.
+/// If that fails, return a lossy UTF-8.
 pub fn attempt_decode(src: &[u8], encoding: &str) -> DecodingResult {
 
     Ok(match decode_bytes(src, &encoding, DEFAULT_DECODER_TRAP) {
@@ -390,11 +390,6 @@ pub fn attempt_decode(src: &[u8], encoding: &str) -> DecodingResult {
                     Err(_) => String::from_utf8_lossy(src).to_string()
             }
     })
-
-    // match std::str::from_utf8(src) {
-    //     Ok(utf8_result) => Ok(utf8_result.to_owned()),
-    //     Err(_) => Ok(decode_bytes(src, &CFG.common.alt_encoding, DEFAULT_DECODER_TRAP)?)
-    // }
 
 }
 
@@ -467,6 +462,14 @@ impl<'a> PatternsCache {
     pub fn new() -> Self {
         Self {
             map: HashMap::new(),
+            limit: 0,
+            size: 0,
+        }
+    }
+
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self {
+            map: HashMap::with_capacity(capacity),
             limit: 0,
             size: 0,
         }

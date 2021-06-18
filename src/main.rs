@@ -18,8 +18,10 @@ lazy_static! {
     static ref CFG: Config = init_cfg();
 
     static ref PATTERNS_CACHE: RwLock<PatternsCache> = {
-        let cache = PatternsCache::new()
+
+        let cache = PatternsCache::with_capacity(CFG.cache.regex_patterns_capacity)
             .limit(CFG.cache.regex_patterns_limit); 
+
         RwLock::new(cache)
     };
 
