@@ -95,6 +95,8 @@ fn default_regex_patterns_capacity() -> usize { 10000 }
 
 pub fn init_cfg() -> Config {
 
+    // TODO: Either a - allow running without `cfg.toml` presents or create a `cfg.toml` file when missing.
+
     let cfg_file = "cfg.toml";
 
     let exe_dir = current_exe().unwrap().parent().unwrap().to_owned();
