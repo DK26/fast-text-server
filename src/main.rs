@@ -5,7 +5,6 @@ mod cfglib;
 mod services;
 mod utils;
 use parking_lot::RwLock;
-use log::info;
 
 use cfglib::*;
 use utils::PatternsCache;

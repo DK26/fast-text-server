@@ -1,4 +1,3 @@
-use log::warn;
 use serde_derive::Deserialize;
 use std::usize;
 use std::{
@@ -123,7 +122,7 @@ pub fn init_cfg() -> Config {
                 .expect("Failed to parse 'cfg.toml'.")
         }
         Err(e) => {
-            warn!("WARNING: Unable to load `cfg.toml` file. {}", e);
+            log::warn!("WARNING: Unable to load `cfg.toml` file. {}", e);
             // eprintln!("WARNING: Unable to load `cfg.toml` file. {}", e);
             Config::default()
         }
