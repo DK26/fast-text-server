@@ -29,6 +29,8 @@ lazy_static! {
 
 pub const DEFAULT_ENCODING : &'static str = "utf-8";
 
+// TODO: Implement `clap` arguments for configurations. Passed arguments override `cfg.toml` configurations.
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
 
@@ -53,5 +55,4 @@ async fn main() -> std::io::Result<()> {
     .bind(&CFG.service.listen)?
     .run()
     .await
-
 }
