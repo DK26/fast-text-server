@@ -12,7 +12,7 @@ use crate::DEFAULT_ENCODING;
 use crate::PATTERNS_CACHE;
 
 #[derive(Deserialize, Debug)]
-pub struct RegexData {
+struct RegexData {
     text: String,
     pattern: String,
     // join: String,
