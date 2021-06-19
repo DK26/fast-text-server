@@ -95,8 +95,6 @@ fn default_regex_patterns_capacity() -> usize { 10000 }
 
 pub fn init_cfg() -> Config {
 
-    // TODO: Either a - allow running without `cfg.toml` presents or create a `cfg.toml` file when missing.
-
     let cfg_file = "cfg.toml";
 
     let exe_dir = current_exe().unwrap().parent().unwrap().to_owned();
@@ -104,13 +102,21 @@ pub fn init_cfg() -> Config {
 
     // println!("{:?}", &toml_path);
 
-    let mut file = File::open(&toml_path).expect("Unable to load `cfg.toml` file.");
+    // let mut file = File::open(&toml_path).expect("Unable to load `cfg.toml` file.");
+    let file = File::open(&toml_path);
 
-    let mut toml_contents= String::new();
+    match file {
+        Ok(mut f) => {
+            let mut toml_contents= String::new();
 
-    file.read_to_string(&mut toml_contents).expect("Unable to load 'cfg.toml' contents.");
-
-    // Returns a `Config` object.
-    toml::from_str(&toml_contents).expect("Failed to parse 'cfg.toml'.")
-
+            f.read_to_string(&mut toml_contents).expect("Unable to load 'cfg.toml' contents.");
+        
+            // Returns a `Config` object.
+            toml::from_str(&toml_contents).expect("Failed to parse 'cfg.toml'.")
+        }
+        Err(e) => {
+            eprintln!("WARNING: Unable to load `cfg.toml` file. {}", e);
+            Config::default()
+        }
+    }
 }
