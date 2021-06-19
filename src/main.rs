@@ -5,6 +5,7 @@ mod cfglib;
 mod services;
 mod utils;
 use parking_lot::RwLock;
+use log::info;
 
 use cfglib::*;
 use utils::PatternsCache;
@@ -35,9 +36,11 @@ pub const DEFAULT_ENCODING : &'static str = "utf-8";
 async fn main() -> std::io::Result<()> {
 
     // TODO: Implement with logger
-    println!("Initializing service...");
-
-    println!("Initializing HTTP Listener: {}", CFG.service.listen);
+    // println!("Initializing service...");
+    log::info!("Initializing service...");
+    
+    // println!("Initializing HTTP Listener: {}", CFG.service.listen);
+    log::info!("Initializing HTTP Listener: {}", CFG.service.listen);
 
     HttpServer::new(|| {
         App::new()
