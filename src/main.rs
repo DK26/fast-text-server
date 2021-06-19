@@ -12,6 +12,7 @@ use actix_web::{
     HttpServer,
     App
 };
+use simple_logger::SimpleLogger;
 
 lazy_static! {
 
@@ -34,13 +35,15 @@ pub const DEFAULT_ENCODING : &'static str = "utf-8";
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
 
-    // TODO: Implement with logger
-    // println!("Initializing service...");
+    SimpleLogger::new()
+    .with_level(log::LevelFilter::Info)
+    .init().unwrap();
+
     log::info!("Initializing service...");
     
-    // println!("Initializing HTTP Listener: {}", CFG.service.listen);
-    log::info!("Initializing HTTP Listener: {}", CFG.service.listen);
+    // log::info!("Initializing HTTP Listener: {}", CFG.service.listen);
 
+    // TODO: Make each server category, configurable through `cfg.toml` (and later, through arguments)
     HttpServer::new(|| {
         App::new()
             .service(services::welcome)
@@ -55,6 +58,7 @@ async fn main() -> std::io::Result<()> {
             .service(services::regex_capture_group)
     })
     .bind(&CFG.service.listen)?
+    // .workers(16)
     .run()
     .await
 }

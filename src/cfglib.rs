@@ -122,7 +122,7 @@ pub fn init_cfg() -> Config {
                 .expect("Failed to parse 'cfg.toml'.")
         }
         Err(e) => {
-            log::warn!("WARNING: Unable to load `cfg.toml` file. {}", e);
+            log::warn!("Unable to load `cfg.toml` file. {}", e);
             // eprintln!("WARNING: Unable to load `cfg.toml` file. {}", e);
             Config::default()
         }
