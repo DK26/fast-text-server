@@ -97,7 +97,12 @@ pub fn init_cfg() -> Config {
 
     let cfg_file = "cfg.toml";
 
-    let exe_dir = current_exe().unwrap().parent().unwrap().to_owned();
+    let exe_dir = current_exe()
+        .unwrap()
+        .parent()
+        .unwrap()
+        .to_owned();
+        
     let toml_path = exe_dir.join(cfg_file);
 
     // println!("{:?}", &toml_path);
@@ -109,10 +114,12 @@ pub fn init_cfg() -> Config {
         Ok(mut f) => {
             let mut toml_contents= String::new();
 
-            f.read_to_string(&mut toml_contents).expect("Unable to load 'cfg.toml' contents.");
+            f.read_to_string(&mut toml_contents)
+                .expect("Unable to load 'cfg.toml' contents.");
         
             // Returns a `Config` object.
-            toml::from_str(&toml_contents).expect("Failed to parse 'cfg.toml'.")
+            toml::from_str(&toml_contents)
+                .expect("Failed to parse 'cfg.toml'.")
         }
         Err(e) => {
             eprintln!("WARNING: Unable to load `cfg.toml` file. {}", e);
