@@ -41,9 +41,6 @@ async fn main() -> std::io::Result<()> {
 
     log::info!("Initializing service...");
     
-    // log::info!("Initializing HTTP Listener: {}", CFG.service.listen);
-
-    // TODO: Make each server category, configurable through `cfg.toml` (and later, through arguments)
     HttpServer::new(|| {
         App::new()
             .service(services::welcome)
@@ -58,7 +55,14 @@ async fn main() -> std::io::Result<()> {
             .service(services::regex_capture_group)
     })
     .bind(&CFG.service.listen)?
-    // .workers(16)
+    .server_hostname(&CFG.service.server_hostname)
+    .workers(CFG.service.workers)
+    .backlog(CFG.service.backlog)
+    .max_connections(CFG.service.max_connections)
+    .keep_alive(CFG.service.keep_alive)
+    .client_timeout(CFG.service.client_timeout)
+    .client_shutdown(CFG.service.client_shutdown)
+    .shutdown_timeout(CFG.service.shutdown_timeout)
     .run()
     .await
 }
