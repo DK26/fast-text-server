@@ -1,8 +1,4 @@
-[common]
-alt_encoding = "windows-1255"  # If decoding to UTF-8 fails, this will be attempted.
-
-# Actix-Web configruations
-[service]
+[service] 
 listen = "127.0.0.1:8080"
 server_hostname = "localhost"
 # workers = 8 # (Automatic by default)
@@ -13,6 +9,9 @@ keep_alive = 5
 client_timout = 5000
 client_shutdown = 5000
 shutdown_timeout = 30
+
+[common]
+alt_encoding = "windows-1255" # If decoding to UTF-8 fails, attempt this one instead.
 
 [cache]
 regex_patterns_limit = 10_000
