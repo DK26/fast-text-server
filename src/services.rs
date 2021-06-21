@@ -18,6 +18,8 @@ pub struct RegexData {
     // join: String,
 }
 
+// TODO: Add handling for errors: Returning original value in case of failure.
+
 #[get("/welcome")]
 pub async fn welcome() -> impl Responder {
     HttpResponse::Ok().body("Welcome. I am Dr. Samuel Hayden, I'm the head of this facility. 

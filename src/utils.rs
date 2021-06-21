@@ -395,6 +395,9 @@ pub fn attempt_decode(src: &[u8], encoding: &str) -> DecodingResult {
 
 pub fn decode_mime_subject(src: &str) -> DecodingResult {
 
+    // TODO: Currently we're decoding a MIME subject / header that begins with `<codec>?B?`, We need to also address `<codec>?Q?` hexa format.
+    // TODO: Check the `mailparse::MailHeader` crate and functionalities.
+
     let mut collect = false;  
 
     let mut scanning_encoding = true;

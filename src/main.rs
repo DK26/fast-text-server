@@ -13,6 +13,26 @@ use actix_web::{
     App
 };
 use simple_logger::SimpleLogger;
+use clap::{ArgMatches, Arg};
+
+fn arg_matches<'a>() -> ArgMatches<'a> {
+
+    let about = format!("Fast, lightweight RESTful API services for processing & modifying UTF-8 text messages.
+    \nAuthor: {}\nSource: https://github.com/DK26/fast-webhooks", env!("CARGO_PKG_AUTHORS"));
+ 
+    clap::App::new("Fast-Webhooks")
+        .version(env!("CARGO_PKG_VERSION"))
+        .about(about.as_str())
+        .arg(
+            Arg::with_name("listen")
+                .short("l")
+                .long("listen")
+                .value_name("INTERFACE IP:PORT")
+                .takes_value(true)
+                .help("Specifies the listening interface for incoming HTTP connections.")
+        )
+    .get_matches()
+}
 
 lazy_static! {
 
@@ -34,6 +54,8 @@ pub const DEFAULT_ENCODING : &'static str = "utf-8";
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+
+    let matches = arg_matches();
 
     SimpleLogger::new()
     .with_level(log::LevelFilter::Info)
