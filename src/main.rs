@@ -61,6 +61,12 @@ pub const DEFAULT_ENCODING : &'static str = "utf-8";
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
 
+    SimpleLogger::new()
+    .with_level(log::LevelFilter::Info)
+    .init().unwrap();
+
+    log::info!("Initializing service...");
+
     let cfg_bind = ARGS.value_of("listen")
         .unwrap_or(&CFG.service.listen);
 
@@ -102,12 +108,6 @@ async fn main() -> std::io::Result<()> {
         Some(w) => w.parse().expect(&format!("Unable to parse '{}' as shutdown_timeout number.", w)),
         None => CFG.service.shutdown_timeout
     };
-
-    SimpleLogger::new()
-    .with_level(log::LevelFilter::Info)
-    .init().unwrap();
-
-    log::info!("Initializing service...");
     
     HttpServer::new(|| {
         App::new()
