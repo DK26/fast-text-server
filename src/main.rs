@@ -48,7 +48,7 @@ fn arg_matches<'a>() -> ArgMatches<'a> {
                 .long("workers")
                 .value_name("N")
                 .takes_value(true)
-                .help("Sets the N number of workers. (Default: Logical CPUs Count)")
+                .help("Sets the N number of workers. (Default: Logical CPUs count)")
         )
         .arg(
             Arg::with_name("backlog")
