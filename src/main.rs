@@ -32,7 +32,55 @@ fn arg_matches<'a>() -> ArgMatches<'a> {
                 .long("listen")
                 .value_name("INTERFACE IP:PORT")
                 .takes_value(true)
-                .help("Specifies the listening interface for incoming HTTP connections.")
+                .help("Sets the listening interface for incoming HTTP connections. (Default: 127.0.0.1:8080)")
+        )
+        .arg(
+            Arg::with_name("server_hostname")
+                .short("s")
+                .long("server_hostname")
+                .value_name("HOSTNAME:PORT")
+                .takes_value(true)
+                .help("Sets the server hostname. Used by the application router as a hostname for url generation. (Default: localhost:8080)")
+        )
+        .arg(
+            Arg::with_name("workers")
+                .short("w")
+                .long("workers")
+                .value_name("N")
+                .takes_value(true)
+                .help("Sets the N number of workers. (Default: Logical CPUs Count)")
+        )
+        .arg(
+            Arg::with_name("backlog")
+                .short("b")
+                .long("backlog")
+                .value_name("N")
+                .takes_value(true)
+                .help("Sets the maximum N number of pending connections that can be waiting to be served. (Default: 2048)")
+        )
+        .arg(
+            Arg::with_name("max_connections")
+                .short("c")
+                .long("max_connections")
+                .value_name("N")
+                .takes_value(true)
+                .help("Sets the maximum per-worker number of N concurrent connections. (Default: 25000)")
+        )
+        .arg(
+            Arg::with_name("max_connection_rate")
+                .short("r")
+                .long("max_connection_rate")
+                .value_name("N")
+                .takes_value(true)
+                .help("Sets the maximum N per-worker concurrent connection establish process. (Default: 256)")
+        )
+        .arg(
+            Arg::with_name("keep_alive")
+                .short("k")
+                .long("keep_alive")
+                .value_name("N")
+                .takes_value(true)
+                .help("Sets server keep-alive setting in N seconds. (Default: 5)")
         )
     .get_matches()
 }
@@ -88,6 +136,11 @@ async fn main() -> std::io::Result<()> {
         Some(w) => w.parse().expect(&format!("Unable to parse '{}' as max_connections number.", w)),
         None => CFG.service.max_connections
     };
+    
+    let cfg_max_connection_rate = match ARGS.value_of("max_connection_rate") {
+        Some(w) => w.parse().expect(&format!("Unable to parse '{}' as max_connection_rate number.", w)),
+        None => CFG.service.max_connection_rate
+    };
 
     let cfg_keep_alive = match ARGS.value_of("keep_alive") {
         Some(w) => w.parse().expect(&format!("Unable to parse '{}' as keep_alive number.", w)),
@@ -122,15 +175,16 @@ async fn main() -> std::io::Result<()> {
             .service(services::decode_mime_subject)
             .service(services::regex_capture_group)
     })
-    .bind(cfg_bind)?
     .server_hostname(cfg_server_hostname)
     .workers(cfg_workers)
     .backlog(cfg_backlog)
     .max_connections(cfg_max_connections)
+    .max_connection_rate(cfg_max_connection_rate)
     .keep_alive(cfg_keep_alive)
     .client_timeout(cfg_client_timeout)
     .client_shutdown(cfg_client_shutdown)
     .shutdown_timeout(cfg_shutdown_timeout)
+    .bind(cfg_bind)?
     .run()
     .await
 }
