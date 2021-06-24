@@ -6,7 +6,7 @@ use std::{
 };
 use std::env::current_exe;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct Config {
 
     #[serde(default = "default_common_config")]
@@ -33,7 +33,7 @@ fn default_common_config() -> CommonConfig { CommonConfig::default() }
 fn default_service_config() -> ServiceConfig { ServiceConfig::default() }
 fn default_cache_config() -> CacheConfig { CacheConfig::default() }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct CommonConfig {
 
     #[serde(default = "default_common_alt_encoding")]
@@ -51,7 +51,7 @@ impl Default for CommonConfig {
 
 fn default_common_alt_encoding() -> String { String::from("utf-8") }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct ServiceConfig {
 
     #[serde(default = "default_service_listen")]
@@ -114,7 +114,7 @@ fn default_service_client_timeout() -> u64 { 5_000 }
 fn default_service_client_shutdown() -> u64 { 5_000 }
 fn default_service_shutdown_timeout() -> u64 { 30 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct CacheConfig {
 
     #[serde(default = "default_cache_regex_patterns_limit")]

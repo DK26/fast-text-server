@@ -4,6 +4,7 @@ extern crate lazy_static;
 mod cfglib;
 mod services;
 mod utils;
+
 use parking_lot::RwLock;
 
 use cfglib::*;
@@ -36,7 +37,7 @@ fn arg_matches<'a>() -> ArgMatches<'a> {
         )
         .arg(
             Arg::with_name("server_hostname")
-                .short("s")
+                .short("n")
                 .long("server_hostname")
                 .value_name("HOSTNAME:PORT")
                 .takes_value(true)
@@ -82,6 +83,52 @@ fn arg_matches<'a>() -> ArgMatches<'a> {
                 .takes_value(true)
                 .help("Sets server keep-alive setting in N seconds. (Default: 5)")
         )
+        .arg(
+            Arg::with_name("client_timeout")
+                .short("t")
+                .long("client_timeout")
+                .value_name("N")
+                .takes_value(true)
+                .help("Sets server client timeout in N milliseconds for the first request. To disable timeout set value to 0. (Default: 5000)")
+        )
+        .arg(
+            Arg::with_name("client_shutdown")
+                .short("s")
+                .long("client_shutdown")
+                .value_name("N")
+                .takes_value(true)
+                .help("Sets server connection shutdown timeout in N milliseconds. To disable timeout set value to 0. (Default: 5000)")
+        )
+        .arg(
+            Arg::with_name("shutdown_timeout")
+                .short("d")
+                .long("shutdown_timeout")
+                .value_name("N")
+                .takes_value(true)
+                .help("Sets the timeout for graceful workers shutdown in N seconds. (Default: 30)")
+        )
+        .arg(
+            Arg::with_name("alt_encoding")
+                .short("a")
+                .long("alt_encoding")
+                .value_name("ENCODING")
+                .takes_value(true)
+                .help("Sets the alternative encoding for decoding, in case decoding with the default UTF-8 fails. (Default: UTF-8)")
+        )
+        .arg(
+            Arg::with_name("regex_patterns_limit")
+                .long("regex_patterns_limit")
+                .value_name("N")
+                .takes_value(true)
+                .help("Sets the in-memory cached patterns limit. Clears cache after threshold. (Default: 10000)")
+        )
+        .arg(
+            Arg::with_name("regex_patterns_capacity")
+                .long("regex_patterns_capacity")
+                .value_name("N")
+                .takes_value(true)
+                .help("Sets the initial amount of N capacity for cached patterns. (Default: 10000)")
+        )
     .get_matches()
 }
 
@@ -104,64 +151,80 @@ lazy_static! {
 
 pub const DEFAULT_ENCODING : &'static str = "utf-8";
 
-// TODO: Implement `clap` arguments for configurations. Passed arguments override `cfg.toml` configurations.
-
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
 
     SimpleLogger::new()
-    .with_level(log::LevelFilter::Info)
+    .with_level(log::LevelFilter::Debug)
     .init().unwrap();
 
     log::info!("Initializing service...");
 
+    // Service Configurations
     let cfg_bind = ARGS.value_of("listen")
         .unwrap_or(&CFG.service.listen);
+    log::debug!("bind = {}", cfg_bind);
 
     let cfg_server_hostname = ARGS.value_of("server_hostname")
         .unwrap_or(&CFG.service.server_hostname);
+    log::debug!("server_hostname = {}", cfg_server_hostname);
 
     let cfg_workers = match ARGS.value_of("workers") {
         // Some(w) => w.parse().unwrap_or(CFG.service.workers),
         Some(w) => w.parse().expect(&format!("Unable to parse '{}' as workers number.", w)),
         None => CFG.service.workers
     };
+    log::debug!("workers = {}", cfg_workers);
 
     let cfg_backlog = match ARGS.value_of("backlog") {
         Some(w) => w.parse().expect(&format!("Unable to parse '{}' as backlog number.", w)),
         None => CFG.service.backlog
     };
+    log::debug!("backlog = {}", cfg_backlog);
 
     let cfg_max_connections = match ARGS.value_of("max_connections") {
         Some(w) => w.parse().expect(&format!("Unable to parse '{}' as max_connections number.", w)),
         None => CFG.service.max_connections
     };
+    log::debug!("max_connections = {}", cfg_max_connections);
     
     let cfg_max_connection_rate = match ARGS.value_of("max_connection_rate") {
         Some(w) => w.parse().expect(&format!("Unable to parse '{}' as max_connection_rate number.", w)),
         None => CFG.service.max_connection_rate
     };
+    log::debug!("max_connection_rate = {}", cfg_max_connection_rate);
 
     let cfg_keep_alive = match ARGS.value_of("keep_alive") {
         Some(w) => w.parse().expect(&format!("Unable to parse '{}' as keep_alive number.", w)),
         None => CFG.service.keep_alive
     };
+    log::debug!("keep_alive = {}", cfg_keep_alive);
 
     let cfg_client_timeout = match ARGS.value_of("client_timeout") {
         Some(w) => w.parse().expect(&format!("Unable to parse '{}' as client_timeout number.", w)),
         None => CFG.service.client_timeout
     };
+    log::debug!("client_timeout = {}", cfg_client_timeout);
 
     let cfg_client_shutdown = match ARGS.value_of("client_shutdown") {
         Some(w) => w.parse().expect(&format!("Unable to parse '{}' as client_shutdown number.", w)),
         None => CFG.service.client_shutdown
     };
+    log::debug!("client_shutdown = {}", cfg_client_shutdown);
 
     let cfg_shutdown_timeout = match ARGS.value_of("shutdown_timeout") {
         Some(w) => w.parse().expect(&format!("Unable to parse '{}' as shutdown_timeout number.", w)),
         None => CFG.service.shutdown_timeout
     };
+    log::debug!("shutdown_timeout = {}", cfg_shutdown_timeout);
     
+    // Common Configurations
+    log::debug!("alt_encoding = {}", *utils::CFG_ALT_ENCODING);
+    
+    // Cache Configurations
+    log::debug!("regex_patterns_capacity = {}", CFG.cache.regex_patterns_capacity);
+    log::debug!("regex_patterns_limit = {}", CFG.cache.regex_patterns_limit);
+
     HttpServer::new(|| {
         App::new()
             .service(services::welcome)

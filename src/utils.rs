@@ -26,7 +26,7 @@ macro_rules! try_option {
 }
 
 lazy_static! {
-    static ref CFG_ALT_ENCODING: &'static str = {
+    pub static ref CFG_ALT_ENCODING: &'static str = {
         ARGS.value_of("alt_encoding").unwrap_or(&CFG.common.alt_encoding)
     };
 }
