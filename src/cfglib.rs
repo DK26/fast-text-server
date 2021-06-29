@@ -1,3 +1,4 @@
+use clap::ArgMatches;
 use serde_derive::Deserialize;
 use std::usize;
 use std::{
@@ -27,6 +28,11 @@ impl Default for Config {
             cache: default_cache_config(),
         }
     }
+
+    // fn from_arg_matches(&self, arg_matches: ArgMatches) -> Self {
+    //     // TODO: Move all match assignments here
+    //     todo!()
+    // }
 }
 
 fn default_common_config() -> CommonConfig { CommonConfig::default() }
