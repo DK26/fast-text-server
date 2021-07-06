@@ -2,6 +2,7 @@
 listen = "127.0.0.1:8080"
 server_hostname = "localhost"
 # workers = 8 # (Automatic by default)
+
 backlog = 2048
 max_connections = 25_000
 max_connection_rate = 256

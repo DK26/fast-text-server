@@ -236,6 +236,7 @@ async fn main() -> std::io::Result<()> {
             .service(services::decode_base64)
             .service(services::decode_base64_encoding)
             .service(services::decode_mime_subject)
+            .service(services::try_decode_mime_subject)
             .service(services::regex_capture_group)
     })
     .server_hostname(cfg_server_hostname)

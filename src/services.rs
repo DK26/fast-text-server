@@ -84,6 +84,17 @@ pub async fn decode_mime_subject(req_body: String) -> impl Responder {
 
 }
 
+#[post("/try_decode_mime_subject")]
+pub async fn try_decode_mime_subject(req_body: String) -> impl Responder {
+
+    // TODO: Attempt decoding MIME or return original value
+
+    let response = utils::decode_mime_subject(&req_body).unwrap();
+
+    HttpResponse::Ok().body(response)
+
+}
+
 #[post("/regex_capture_group")]
 pub async fn regex_capture_group(request: web::Json<RegexData>) -> impl Responder { 
     
