@@ -23,7 +23,6 @@ fn arg_matches<'a>() -> ArgMatches<'a> {
     let about = format!("Fast, lightweight RESTful API services for processing & modifying UTF-8 text messages.
     \nAuthor: {}\nSource: https://github.com/DK26/fast-webhooks", env!("CARGO_PKG_AUTHORS"));
  
-    // TODO: Continue the rest of the configurations
     clap::App::new("Fast-Webhooks")
         .version(env!("CARGO_PKG_VERSION"))
         .about(about.as_str())
@@ -134,9 +133,11 @@ fn arg_matches<'a>() -> ArgMatches<'a> {
 
 lazy_static! {
 
-    static ref CFG: Config = init_cfg();
+    // static ref CFG: Config = init_cfg();
 
     static ref ARGS: ArgMatches<'static> = arg_matches();
+
+    static ref CFG: Config = load_cfg_file();
 
     static ref PATTERNS_CACHE: RwLock<PatternsCache> = {
 
@@ -160,70 +161,70 @@ async fn main() -> std::io::Result<()> {
 
     log::info!("Initializing service...");
 
-    // Service Configurations
-    let cfg_bind = ARGS.value_of("listen")
-        .unwrap_or(&CFG.service.listen);
-    log::debug!("bind = {}", cfg_bind);
+    // // Service Configurations
+    // let cfg_bind = ARGS.value_of("listen")
+    //     .unwrap_or(&CFG.service.listen);
+    // log::debug!("bind = {}", cfg_bind);
 
-    let cfg_server_hostname = ARGS.value_of("server_hostname")
-        .unwrap_or(&CFG.service.server_hostname);
-    log::debug!("server_hostname = {}", cfg_server_hostname);
+    // let cfg_server_hostname = ARGS.value_of("server_hostname")
+    //     .unwrap_or(&CFG.service.server_hostname);
+    // log::debug!("server_hostname = {}", cfg_server_hostname);
 
-    let cfg_workers = match ARGS.value_of("workers") {
-        // Some(w) => w.parse().unwrap_or(CFG.service.workers),
-        Some(w) => w.parse().expect(&format!("Unable to parse '{}' as workers number.", w)),
-        None => CFG.service.workers
-    };
-    log::debug!("workers = {}", cfg_workers);
+    // let cfg_workers = match ARGS.value_of("workers") {
+    //     // Some(w) => w.parse().unwrap_or(CFG.service.workers),
+    //     Some(w) => w.parse().expect(&format!("Unable to parse '{}' as workers number.", w)),
+    //     None => CFG.service.workers
+    // };
+    // log::debug!("workers = {}", cfg_workers);
 
-    let cfg_backlog = match ARGS.value_of("backlog") {
-        Some(w) => w.parse().expect(&format!("Unable to parse '{}' as backlog number.", w)),
-        None => CFG.service.backlog
-    };
-    log::debug!("backlog = {}", cfg_backlog);
+    // let cfg_backlog = match ARGS.value_of("backlog") {
+    //     Some(w) => w.parse().expect(&format!("Unable to parse '{}' as backlog number.", w)),
+    //     None => CFG.service.backlog
+    // };
+    // log::debug!("backlog = {}", cfg_backlog);
 
-    let cfg_max_connections = match ARGS.value_of("max_connections") {
-        Some(w) => w.parse().expect(&format!("Unable to parse '{}' as max_connections number.", w)),
-        None => CFG.service.max_connections
-    };
-    log::debug!("max_connections = {}", cfg_max_connections);
+    // let cfg_max_connections = match ARGS.value_of("max_connections") {
+    //     Some(w) => w.parse().expect(&format!("Unable to parse '{}' as max_connections number.", w)),
+    //     None => CFG.service.max_connections
+    // };
+    // log::debug!("max_connections = {}", cfg_max_connections);
     
-    let cfg_max_connection_rate = match ARGS.value_of("max_connection_rate") {
-        Some(w) => w.parse().expect(&format!("Unable to parse '{}' as max_connection_rate number.", w)),
-        None => CFG.service.max_connection_rate
-    };
-    log::debug!("max_connection_rate = {}", cfg_max_connection_rate);
+    // let cfg_max_connection_rate = match ARGS.value_of("max_connection_rate") {
+    //     Some(w) => w.parse().expect(&format!("Unable to parse '{}' as max_connection_rate number.", w)),
+    //     None => CFG.service.max_connection_rate
+    // };
+    // log::debug!("max_connection_rate = {}", cfg_max_connection_rate);
 
-    let cfg_keep_alive = match ARGS.value_of("keep_alive") {
-        Some(w) => w.parse().expect(&format!("Unable to parse '{}' as keep_alive number.", w)),
-        None => CFG.service.keep_alive
-    };
-    log::debug!("keep_alive = {}", cfg_keep_alive);
+    // let cfg_keep_alive = match ARGS.value_of("keep_alive") {
+    //     Some(w) => w.parse().expect(&format!("Unable to parse '{}' as keep_alive number.", w)),
+    //     None => CFG.service.keep_alive
+    // };
+    // log::debug!("keep_alive = {}", cfg_keep_alive);
 
-    let cfg_client_timeout = match ARGS.value_of("client_timeout") {
-        Some(w) => w.parse().expect(&format!("Unable to parse '{}' as client_timeout number.", w)),
-        None => CFG.service.client_timeout
-    };
-    log::debug!("client_timeout = {}", cfg_client_timeout);
+    // let cfg_client_timeout = match ARGS.value_of("client_timeout") {
+    //     Some(w) => w.parse().expect(&format!("Unable to parse '{}' as client_timeout number.", w)),
+    //     None => CFG.service.client_timeout
+    // };
+    // log::debug!("client_timeout = {}", cfg_client_timeout);
 
-    let cfg_client_shutdown = match ARGS.value_of("client_shutdown") {
-        Some(w) => w.parse().expect(&format!("Unable to parse '{}' as client_shutdown number.", w)),
-        None => CFG.service.client_shutdown
-    };
-    log::debug!("client_shutdown = {}", cfg_client_shutdown);
+    // let cfg_client_shutdown = match ARGS.value_of("client_shutdown") {
+    //     Some(w) => w.parse().expect(&format!("Unable to parse '{}' as client_shutdown number.", w)),
+    //     None => CFG.service.client_shutdown
+    // };
+    // log::debug!("client_shutdown = {}", cfg_client_shutdown);
 
-    let cfg_shutdown_timeout = match ARGS.value_of("shutdown_timeout") {
-        Some(w) => w.parse().expect(&format!("Unable to parse '{}' as shutdown_timeout number.", w)),
-        None => CFG.service.shutdown_timeout
-    };
-    log::debug!("shutdown_timeout = {}", cfg_shutdown_timeout);
+    // let cfg_shutdown_timeout = match ARGS.value_of("shutdown_timeout") {
+    //     Some(w) => w.parse().expect(&format!("Unable to parse '{}' as shutdown_timeout number.", w)),
+    //     None => CFG.service.shutdown_timeout
+    // };
+    // log::debug!("shutdown_timeout = {}", cfg_shutdown_timeout);
     
-    // Common Configurations
-    log::debug!("alt_encoding = {}", *utils::CFG_ALT_ENCODING);
+    // // Common Configurations
+    // log::debug!("alt_encoding = {}", *utils::CFG_ALT_ENCODING);
     
-    // Cache Configurations
-    log::debug!("regex_patterns_capacity = {}", CFG.cache.regex_patterns_capacity);
-    log::debug!("regex_patterns_limit = {}", CFG.cache.regex_patterns_limit);
+    // // Cache Configurations
+    // log::debug!("regex_patterns_capacity = {}", CFG.cache.regex_patterns_capacity);
+    // log::debug!("regex_patterns_limit = {}", CFG.cache.regex_patterns_limit);
 
     HttpServer::new(|| {
         App::new()
