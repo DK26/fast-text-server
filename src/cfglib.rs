@@ -2,12 +2,26 @@ use clap::ArgMatches;
 use serde_derive::Deserialize;
 use std::default::default;
 use std::path::Path;
+use std::str::FromStr;
 // use std::usize;
 use std::{
     fs::File, 
     io::Read
 };
 use std::env::current_exe;
+
+enum CfgFileError {
+    FailedToOpenCfgFile(std::io::Error),
+    FailedToReadCfgFile(std::io::Error),
+    FailedToParseCfgFile(toml::de::Error)
+}
+
+/// Attempts to parse a given argument into a assigned type. Panics on failure.
+fn parse_arg<T: FromStr>(arg_matches: ArgMatches, arg: &str, default: fn() -> T) -> T {
+    arg_matches.value_of(arg)
+        .map_or_else(|| default,
+        |v| v.parse().expect(&format!("Unable to parse {}.", v)))
+}
 
 #[derive(Deserialize, Debug)]
 pub struct Config {
@@ -33,13 +47,6 @@ impl Default for Config {
     }
 
 }
-
-enum CfgFileError {
-    FailedToOpenCfgFile(std::io::Error),
-    FailedToReadCfgFile(std::io::Error),
-    FailedToParseCfgFile(toml::de::Error)
-}
-
 
 impl Config {
 
@@ -101,38 +108,52 @@ impl Config {
 
                 listen: arg_matches
                     .value_of("listen")
-                    .unwrap_or_default()
+                    .unwrap_or_else( || &default_service_listen())
                     .to_owned(),
 
                 server_hostname: arg_matches
                     .value_of("server_hostname")
-                    .unwrap_or_default()
+                    .unwrap_or_else( || &default_service_server_hostname())
                     .to_owned(),
 
                 workers: arg_matches
                     .value_of("workers")
-                    .unwrap_or_default()
-                    .parse().unwrap_or_default(),
+                    .map_or_else( 
+                        || default_service_workers(),
+                        // |v| v.parse().unwrap()),  // Let `clap` validate the value to be a proper number.
+                        |v| v.parse().expect(&format!("Unable to parse {}.", v))),
+                        // |v| v.parse().unwrap_or_else( |_| default_service_workers())),  // Use default on parsing failure
+
 
                 backlog: arg_matches
                     .value_of("backlog")
-                    .unwrap_or(|| default_service_backlog()),
+                    .map_or_else( 
+                        || default_service_backlog(),
+                        |v| v.parse().expect(&format!("Unable to parse {}.", v))),
 
                 max_connections: arg_matches
                     .value_of("max_connections")
-                    .unwrap_or(|| default_service_max_connections()),
+                    .map_or_else( 
+                        || default_service_max_connections(),
+                        |v| v.parse().expect(&format!("Unable to parse {}.", v))),
 
                 max_connection_rate: arg_matches
                     .value_of("max_connection_rate")
-                    .unwrap_or(|| default_service_max_connection_rate()),
+                    .map_or_else( 
+                        || default_service_max_connection_rate(),
+                        |v| v.parse().unwrap()),  // Let `clap` validate the value to be a proper number.
 
                 keep_alive: arg_matches
                     .value_of("keep_alive")
-                    .unwrap_or(|| default_service_keep_alive()),
+                    .map_or_else( 
+                        || default_service_workers(),
+                        |v| v.parse().unwrap()),  // Let `clap` validate the value to be a proper number.
 
                 client_timeout: arg_matches
                     .value_of("client_timeout")
-                    .unwrap_or(|| default_service_client_timeout()),
+                    .map_or_else( 
+                        || default_service_workers(),
+                        |v| v.parse().unwrap()),  // Let `clap` validate the value to be a proper number.
 
                 client_shutdown: arg_matches
                     .value_of("client_shutdown")
@@ -321,7 +342,7 @@ fn default_service_shutdown_timeout() -> u64 { 30 }
 #[derive(Deserialize, Debug)]
 pub struct CacheConfig {
 
-    #[serde(default = "default_cache_regex_patterns_limit")]
+    #[serde(default = "default_regex_patterns_limit")]
     pub regex_patterns_limit: usize,
 
     #[serde(default = "default_regex_patterns_capacity")]
@@ -332,7 +353,7 @@ pub struct CacheConfig {
 impl Default for CacheConfig {
     fn default() -> Self {
         Self {
-            regex_patterns_limit: default_cache_regex_patterns_limit(),
+            regex_patterns_limit: default_regex_patterns_limit(),
             regex_patterns_capacity: default_regex_patterns_capacity(),
         }
     }
