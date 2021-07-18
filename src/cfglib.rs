@@ -1,6 +1,6 @@
 use clap::ArgMatches;
 use serde_derive::Deserialize;
-use std::default::default;
+// use std::default::default;
 use std::path::Path;
 use std::str::FromStr;
 // use std::usize;
@@ -16,11 +16,25 @@ enum CfgFileError {
     FailedToParseCfgFile(toml::de::Error)
 }
 
-/// Attempts to parse a given argument into a assigned type. Panics on failure.
+// enum OnParseError<T, F: Fn() -> T> {
+//     DefaultValue(T),
+//     DefaultFn(F),
+//     Panic,
+// }
+
+/// Attempts to parse a given argument into the assigned type. Panics on failure.
+// fn parse_arg<T: FromStr>(arg_matches: ArgMatches, arg: &str, default: fn() -> T, on_error: OnParseError<T, fn() -> T>) -> T {
 fn parse_arg<T: FromStr>(arg_matches: ArgMatches, arg: &str, default: fn() -> T) -> T {
-    arg_matches.value_of(arg)
-        .map_or_else(|| default,
-        |v| v.parse().expect(&format!("Unable to parse {}.", v)))
+
+    match arg_matches.value_of(arg) {
+        Some(value) => match value.parse() {
+            Ok(parsed) => parsed,
+            Err(_) => panic!(&format!("Unable to parse argument '{}'. Bad value '{}'", arg, value))
+        }
+        None => {
+            default()
+        }
+    }
 }
 
 #[derive(Deserialize, Debug)]
@@ -106,82 +120,94 @@ impl Config {
 
             service : ServiceConfig {
 
-                listen: arg_matches
-                    .value_of("listen")
-                    .unwrap_or_else( || &default_service_listen())
-                    .to_owned(),
+                listen: parse_arg(arg_matches, "listen", default_service_listen),
+                // listen: arg_matches
+                //     .value_of("listen")
+                //     .unwrap_or_else( || &default_service_listen())
+                //     .to_owned(),
 
-                server_hostname: arg_matches
-                    .value_of("server_hostname")
-                    .unwrap_or_else( || &default_service_server_hostname())
-                    .to_owned(),
+                server_hostname: parse_arg(arg_matches, "server_hostname", default_service_server_hostname),
+                // server_hostname: arg_matches
+                //     .value_of("server_hostname")
+                //     .unwrap_or_else( || &default_service_server_hostname())
+                //     .to_owned(),
 
-                workers: arg_matches
-                    .value_of("workers")
-                    .map_or_else( 
-                        || default_service_workers(),
-                        // |v| v.parse().unwrap()),  // Let `clap` validate the value to be a proper number.
-                        |v| v.parse().expect(&format!("Unable to parse {}.", v))),
-                        // |v| v.parse().unwrap_or_else( |_| default_service_workers())),  // Use default on parsing failure
+                workers: parse_arg(arg_matches, "workers", default_service_workers),
+                // workers: arg_matches
+                //     .value_of("workers")
+                //     .map_or_else( 
+                //         || default_service_workers(),
+                //         // |v| v.parse().unwrap()),  // Let `clap` validate the value to be a proper number.
+                //         |v| v.parse().expect(&format!("Unable to parse {}.", v))),
+                //         // |v| v.parse().unwrap_or_else( |_| default_service_workers())),  // Use default on parsing failure
 
+                backlog: parse_arg(arg_matches, "backlog", default_service_backlog),
+                // backlog: arg_matches
+                //     .value_of("backlog")
+                //     .map_or_else( 
+                //         || default_service_backlog(),
+                //         |v| v.parse().expect(&format!("Unable to parse {}.", v))),
 
-                backlog: arg_matches
-                    .value_of("backlog")
-                    .map_or_else( 
-                        || default_service_backlog(),
-                        |v| v.parse().expect(&format!("Unable to parse {}.", v))),
+                max_connections: parse_arg(arg_matches, "max_connections", default_service_max_connections),
+                // max_connections: arg_matches
+                //     .value_of("max_connections")
+                //     .map_or_else( 
+                //         || default_service_max_connections(),
+                //         |v| v.parse().expect(&format!("Unable to parse {}.", v))),
 
-                max_connections: arg_matches
-                    .value_of("max_connections")
-                    .map_or_else( 
-                        || default_service_max_connections(),
-                        |v| v.parse().expect(&format!("Unable to parse {}.", v))),
+                max_connection_rate: parse_arg(arg_matches, "max_connection_rate", default_service_max_connection_rate),
+                // max_connection_rate: arg_matches
+                //     .value_of("max_connection_rate")
+                //     .map_or_else( 
+                //         || default_service_max_connection_rate(),
+                //         |v| v.parse().unwrap()),  // Let `clap` validate the value to be a proper number.
 
-                max_connection_rate: arg_matches
-                    .value_of("max_connection_rate")
-                    .map_or_else( 
-                        || default_service_max_connection_rate(),
-                        |v| v.parse().unwrap()),  // Let `clap` validate the value to be a proper number.
+                keep_alive: parse_arg(arg_matches, "keep_alive", default_service_keep_alive),
+                // keep_alive: arg_matches
+                //     .value_of("keep_alive")
+                //     .map_or_else( 
+                //         || default_service_workers(),
+                //         |v| v.parse().unwrap()),  // Let `clap` validate the value to be a proper number.
 
-                keep_alive: arg_matches
-                    .value_of("keep_alive")
-                    .map_or_else( 
-                        || default_service_workers(),
-                        |v| v.parse().unwrap()),  // Let `clap` validate the value to be a proper number.
+                client_timeout: parse_arg(arg_matches, "client_timeout", default_service_client_timeout),
+                // client_timeout: arg_matches
+                //     .value_of("client_timeout")
+                //     .map_or_else( 
+                //         || default_service_workers(),
+                //         |v| v.parse().unwrap()),  // Let `clap` validate the value to be a proper number.
 
-                client_timeout: arg_matches
-                    .value_of("client_timeout")
-                    .map_or_else( 
-                        || default_service_workers(),
-                        |v| v.parse().unwrap()),  // Let `clap` validate the value to be a proper number.
+                client_shutdown: parse_arg(arg_matches, "client_shutdown", default_service_client_shutdown),
+                // client_shutdown: arg_matches
+                //     .value_of("client_shutdown")
+                //     .unwrap_or(|| default_service_client_shutdown()),
 
-                client_shutdown: arg_matches
-                    .value_of("client_shutdown")
-                    .unwrap_or(|| default_service_client_shutdown()),
-
-                shutdown_timeout: arg_matches
-                    .value_of("shutdown_timeout")
-                    .unwrap_or(|| default_service_shutdown_timeout()),
+                shutdown_timeout: parse_arg(arg_matches, "shutdown_timeout", default_service_shutdown_timeout),
+                // shutdown_timeout: arg_matches
+                //     .value_of("shutdown_timeout")
+                //     .unwrap_or(|| default_service_shutdown_timeout()),
 
             },
 
             common : CommonConfig {
 
-                alt_encoding: arg_matches
-                    .value_of("alt_encoding")
-                    .unwrap_or(|| default_common_alt_encoding()),
+                alt_encoding: parse_arg(arg_matches, "alt_encoding", default_common_alt_encoding),
+                // alt_encoding: arg_matches
+                //     .value_of("alt_encoding")
+                //     .unwrap_or(|| default_common_alt_encoding()),
 
             },
 
             cache: CacheConfig {
 
-                regex_patterns_limit: arg_matches
-                    .value_of("regex_patterns_limit")
-                    .unwrap_or(|| default_regex_patterns_limit()),
+                regex_patterns_limit: parse_arg(arg_matches, "regex_patterns_limit", default_regex_patterns_limit),
+                // regex_patterns_limit: arg_matches
+                //     .value_of("regex_patterns_limit")
+                //     .unwrap_or(|| default_regex_patterns_limit()),
 
-                regex_patterns_capacity: arg_matches
-                    .value_of("regex_patterns_capacity")
-                    .unwrap_or(|| default_regex_patterns_capacity()),
+                regex_patterns_capacity: parse_arg(arg_matches, "regex_patterns_capacity", default_regex_patterns_capacity),
+                // regex_patterns_capacity: arg_matches
+                //     .value_of("regex_patterns_capacity")
+                //     .unwrap_or(|| default_regex_patterns_capacity()),
       
             },
 
