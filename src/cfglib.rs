@@ -81,16 +81,8 @@ impl Config {
         match file {
     
             Ok(mut f) => {
-    
+                
                 let mut toml_contents= String::new();
-    
-                // match f.read_to_string(&mut toml_contents) {
-                //     Err(e) => {
-                //         log::error!("Unable to load 'cfg.toml' contents: {}", e);
-                //         std::process::exit(1)
-                //     }
-                //     _ => {}
-                // }
 
                 if let Err(e) = f.read_to_string(&mut toml_contents) {
                     return Err(CfgFileError::FailedToReadCfgFile(e))
@@ -99,20 +91,10 @@ impl Config {
                 // Returns a `Config` object.
                 match toml::from_str(&toml_contents) {
                     Ok(r) => Ok(r),
-                    Err(e) => {
-                        // log::error!("Failed to parse 'cfg.toml': {}", e);
-                        // std::process::exit(1);
-                        return Err(CfgFileError::FailedToParseCfgFile(e))
-                    }
+                    Err(e) =>  return Err(CfgFileError::FailedToParseCfgFile(e))
                 }
-                // toml::from_str(&toml_contents)
-                //     .expect("Failed to parse 'cfg.toml'.")
             }
-            Err(e) => {
-                // log::warn!("Unable to load `cfg.toml` file: {}", e);
-                // Config::default()
-                Err(CfgFileError::FailedToOpenCfgFile(e))
-            }
+            Err(e) => Err(CfgFileError::FailedToOpenCfgFile(e))
         }
     }
 
@@ -123,162 +105,27 @@ impl Config {
             service : ServiceConfig {
 
                 listen: parse_arg(&arg_matches, "listen", base.service.listen),
-                // listen: arg_matches
-                //     .value_of("listen")
-                //     .unwrap_or_else( || &default_service_listen())
-                //     .to_owned(),
-
                 server_hostname: parse_arg(&arg_matches, "server_hostname", base.service.server_hostname),
-                // server_hostname: arg_matches
-                //     .value_of("server_hostname")
-                //     .unwrap_or_else( || &default_service_server_hostname())
-                //     .to_owned(),
-
                 workers: parse_arg(&arg_matches, "workers", base.service.workers),
-                // workers: arg_matches
-                //     .value_of("workers")
-                //     .map_or_else( 
-                //         || default_service_workers(),
-                //         // |v| v.parse().unwrap()),  // Let `clap` validate the value to be a proper number.
-                //         |v| v.parse().expect(&format!("Unable to parse {}.", v))),
-                //         // |v| v.parse().unwrap_or_else( |_| default_service_workers())),  // Use default on parsing failure
-
                 backlog: parse_arg(&arg_matches, "backlog", base.service.backlog),
-                // backlog: arg_matches
-                //     .value_of("backlog")
-                //     .map_or_else( 
-                //         || default_service_backlog(),
-                //         |v| v.parse().expect(&format!("Unable to parse {}.", v))),
-
                 max_connections: parse_arg(&arg_matches, "max_connections", base.service.max_connections),
-                // max_connections: arg_matches
-                //     .value_of("max_connections")
-                //     .map_or_else( 
-                //         || default_service_max_connections(),
-                //         |v| v.parse().expect(&format!("Unable to parse {}.", v))),
-
                 max_connection_rate: parse_arg(&arg_matches, "max_connection_rate", base.service.max_connection_rate),
-                // max_connection_rate: arg_matches
-                //     .value_of("max_connection_rate")
-                //     .map_or_else( 
-                //         || default_service_max_connection_rate(),
-                //         |v| v.parse().unwrap()),  // Let `clap` validate the value to be a proper number.
-
                 keep_alive: parse_arg(&arg_matches, "keep_alive", base.service.keep_alive),
-                // keep_alive: arg_matches
-                //     .value_of("keep_alive")
-                //     .map_or_else( 
-                //         || default_service_workers(),
-                //         |v| v.parse().unwrap()),  // Let `clap` validate the value to be a proper number.
-
                 client_timeout: parse_arg(&arg_matches, "client_timeout", base.service.client_timeout),
-                // client_timeout: arg_matches
-                //     .value_of("client_timeout")
-                //     .map_or_else( 
-                //         || default_service_workers(),
-                //         |v| v.parse().unwrap()),  // Let `clap` validate the value to be a proper number.
-
                 client_shutdown: parse_arg(&arg_matches, "client_shutdown", base.service.client_shutdown),
-                // client_shutdown: arg_matches
-                //     .value_of("client_shutdown")
-                //     .unwrap_or(|| default_service_client_shutdown()),
-
                 shutdown_timeout: parse_arg(&arg_matches, "shutdown_timeout", base.service.shutdown_timeout),
-                // shutdown_timeout: arg_matches
-                //     .value_of("shutdown_timeout")
-                //     .unwrap_or(|| default_service_shutdown_timeout()),
-
             },
 
             common : CommonConfig {
-
                 alt_encoding: parse_arg(&arg_matches, "alt_encoding", base.common.alt_encoding),
-                // alt_encoding: arg_matches
-                //     .value_of("alt_encoding")
-                //     .unwrap_or(|| default_common_alt_encoding()),
-
             },
 
             cache: CacheConfig {
-
                 regex_patterns_limit: parse_arg(&arg_matches, "regex_patterns_limit", base.cache.regex_patterns_limit),
-                // regex_patterns_limit: arg_matches
-                //     .value_of("regex_patterns_limit")
-                //     .unwrap_or(|| default_regex_patterns_limit()),
-
                 regex_patterns_capacity: parse_arg(&arg_matches, "regex_patterns_capacity", base.cache.regex_patterns_capacity),
-                // regex_patterns_capacity: arg_matches
-                //     .value_of("regex_patterns_capacity")
-                //     .unwrap_or(|| default_regex_patterns_capacity()),
-      
             },
 
         }
-
-    // Service Configurations
-    // let cfg_bind = ARGS.value_of("listen")
-    //     .unwrap_or(&CFG.service.listen);
-    // log::debug!("bind = {}", cfg_bind);
-
-    // let cfg_server_hostname = ARGS.value_of("server_hostname")
-    //     .unwrap_or(&CFG.service.server_hostname);
-    // log::debug!("server_hostname = {}", cfg_server_hostname);
-
-    // let cfg_workers = match ARGS.value_of("workers") {
-    //     // Some(w) => w.parse().unwrap_or(CFG.service.workers),
-    //     Some(w) => w.parse().expect(&format!("Unable to parse '{}' as workers number.", w)),
-    //     None => CFG.service.workers
-    // };
-    // log::debug!("workers = {}", cfg_workers);
-
-    // let cfg_backlog = match ARGS.value_of("backlog") {
-    //     Some(w) => w.parse().expect(&format!("Unable to parse '{}' as backlog number.", w)),
-    //     None => CFG.service.backlog
-    // };
-    // log::debug!("backlog = {}", cfg_backlog);
-
-    // let cfg_max_connections = match ARGS.value_of("max_connections") {
-    //     Some(w) => w.parse().expect(&format!("Unable to parse '{}' as max_connections number.", w)),
-    //     None => CFG.service.max_connections
-    // };
-    // log::debug!("max_connections = {}", cfg_max_connections);
-
-    // let cfg_max_connection_rate = match ARGS.value_of("max_connection_rate") {
-    //     Some(w) => w.parse().expect(&format!("Unable to parse '{}' as max_connection_rate number.", w)),
-    //     None => CFG.service.max_connection_rate
-    // };
-    // log::debug!("max_connection_rate = {}", cfg_max_connection_rate);
-
-    // let cfg_keep_alive = match ARGS.value_of("keep_alive") {
-    //     Some(w) => w.parse().expect(&format!("Unable to parse '{}' as keep_alive number.", w)),
-    //     None => CFG.service.keep_alive
-    // };
-    // log::debug!("keep_alive = {}", cfg_keep_alive);
-
-    // let cfg_client_timeout = match ARGS.value_of("client_timeout") {
-    //     Some(w) => w.parse().expect(&format!("Unable to parse '{}' as client_timeout number.", w)),
-    //     None => CFG.service.client_timeout
-    // };
-    // log::debug!("client_timeout = {}", cfg_client_timeout);
-
-    // let cfg_client_shutdown = match ARGS.value_of("client_shutdown") {
-    //     Some(w) => w.parse().expect(&format!("Unable to parse '{}' as client_shutdown number.", w)),
-    //     None => CFG.service.client_shutdown
-    // };
-    // log::debug!("client_shutdown = {}", cfg_client_shutdown);
-
-    // let cfg_shutdown_timeout = match ARGS.value_of("shutdown_timeout") {
-    //     Some(w) => w.parse().expect(&format!("Unable to parse '{}' as shutdown_timeout number.", w)),
-    //     None => CFG.service.shutdown_timeout
-    // };
-    // log::debug!("shutdown_timeout = {}", cfg_shutdown_timeout);
-
-    // Common Configurations
-    // log::debug!("alt_encoding = {}", *utils::CFG_ALT_ENCODING);
-
-    // Cache Configurations
-    // log::debug!("regex_patterns_capacity = {}", CFG.cache.regex_patterns_capacity);
-    // log::debug!("regex_patterns_limit = {}", CFG.cache.regex_patterns_limit);
     }
 }
 
@@ -389,53 +236,6 @@ impl Default for CacheConfig {
 
 fn default_regex_patterns_limit() -> usize { 10000 }
 fn default_regex_patterns_capacity() -> usize { 10000 }
-
-
-// pub fn load_cfg_file() -> Config {
-
-//     let cfg_file = "cfg.toml";
-
-//     let exe_dir = current_exe()
-//         .unwrap()
-//         .parent()
-//         .unwrap()
-//         .to_owned();
-        
-//     let toml_path = exe_dir.join(cfg_file);
-
-//     let file = File::open(&toml_path);
-
-//     match file {
-
-//         Ok(mut f) => {
-
-//             let mut toml_contents= String::new();
-
-//             match f.read_to_string(&mut toml_contents) {
-//                 Err(e) => {
-//                     log::error!("Unable to load 'cfg.toml' contents: {}", e);
-//                     std::process::exit(1);
-//                 }
-//                 _ => {}
-//             }
-        
-//             // Returns a `Config` object.
-//             match toml::from_str(&toml_contents) {
-//                 Ok(r) => r,
-//                 Err(e) => {
-//                     log::error!("Failed to parse 'cfg.toml': {}", e);
-//                     std::process::exit(1);
-//                 }
-//             }
-//             // toml::from_str(&toml_contents)
-//             //     .expect("Failed to parse 'cfg.toml'.")
-//         }
-//         Err(e) => {
-//             log::warn!("Unable to load `cfg.toml` file: {}", e);
-//             Config::default()
-//         }
-//     }
-// }
 
 pub fn init_cfg(arg_matches: ArgMatches) -> Config {
 

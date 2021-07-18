@@ -37,7 +37,7 @@ shutdown_timeout = 30
 
 # Sets the alternative encoding for decoding, in case decoding with the default UTF-8 fails. (Default: UTF-8)
 # If decoding to UTF-8 fails, this one is attempted instead.
-alt_encoding = "windows-1255" 
+alt_encoding = "utf-8" 
 
 
 [cache]
