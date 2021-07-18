@@ -21,7 +21,7 @@ enum CfgFileError {
 //     Panic,
 // }
 
-/// Attempts to parse a given argument into the assigned type. Panics on failure.
+/// Attempts to parse a given argument into the assigned type. Exists the program on failure.
 // fn parse_arg<T: FromStr>(arg_matches: ArgMatches, arg: &str, default: fn() -> T, on_error: OnParseError<T, fn() -> T>) -> T {
 // fn parse_arg<T: FromStr>(arg_matches: ArgMatches, arg: &str, default: fn() -> T) -> T {
 // fn parse_arg<T: FromStr>(arg_matches: ArgMatches, arg: &str, default: impl Fn() -> T) -> T {
@@ -30,7 +30,11 @@ fn parse_arg<T: FromStr>(arg_matches: &ArgMatches, arg: &str, default: T) -> T {
     match arg_matches.value_of(arg) {
         Some(value) => match value.parse() {
             Ok(parsed) => parsed,
-            Err(_) => panic!("Unable to parse argument '{}'. Bad value '{}'", arg, value)
+            // Err(_) => panic!("Unable to parse argument '{}'. Bad value '{}'", arg, value)
+            Err(_) => {
+                log::error!("Failed to parse the '{}' argument. Incorrect value was given: '{}'", arg, value);
+                std::process::exit(1);
+            }
         }
         None => {
             // default()
@@ -81,7 +85,7 @@ impl Config {
         match file {
     
             Ok(mut f) => {
-                
+
                 let mut toml_contents= String::new();
 
                 if let Err(e) = f.read_to_string(&mut toml_contents) {
