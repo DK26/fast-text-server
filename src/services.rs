@@ -6,6 +6,7 @@ use actix_web::{
     Responder,
     web,
 };
+use mailparse::parse_header;
 
 use crate::utils;
 use crate::DEFAULT_ENCODING;
@@ -81,6 +82,15 @@ pub async fn decode_mime_subject(req_body: String) -> impl Responder {
     let response = utils::decode_mime_subject(&req_body).unwrap();
 
     HttpResponse::Ok().body(response)
+
+}
+
+#[post("/decode_mime_subject/rfc822")]
+pub async fn decode_mime_subject_rfc822(req_body: web::Bytes) -> impl Responder {
+
+    let (parsed, _) = parse_header(&req_body).unwrap();
+
+    HttpResponse::Ok().body(parsed.get_value())
 
 }
 
