@@ -107,7 +107,6 @@ impl Config {
         Self {
 
             service : ServiceConfig {
-
                 listen: parse_arg(&arg_matches, "listen", base.service.listen),
                 server_hostname: parse_arg(&arg_matches, "server_hostname", base.service.server_hostname),
                 workers: parse_arg(&arg_matches, "workers", base.service.workers),
