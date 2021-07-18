@@ -1,6 +1,6 @@
 [package]
 name = "fast-webhooks"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["David Krasnitsky <dikaveman@gmail.com>"]
 edition = "2018"
 
@@ -21,4 +21,3 @@ log = "0.4"
 simple_logger = "1.11"
 num_cpus = "1.13"
 clap = "2.33"
-merge = "0.1"

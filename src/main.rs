@@ -16,8 +16,6 @@ use actix_web::{
 use simple_logger::SimpleLogger;
 use clap::{ArgMatches, Arg};
 
-// TODO: Create a const for each configuration default value, to make it consistent among all references.
-
 fn arg_matches<'a>() -> ArgMatches<'a> {
 
     let about = format!("Fast, lightweight RESTful API services for processing & modifying UTF-8 text messages.
@@ -133,15 +131,10 @@ fn arg_matches<'a>() -> ArgMatches<'a> {
 
 lazy_static! {
 
-    // static ref CFG: Config = init_cfg();
-
-    static ref ARGS: ArgMatches<'static> = arg_matches();
-
-    static ref CFG: Config = load_cfg_file();
+    static ref CFG: Config = cfglib::init_cfg(arg_matches());
 
     static ref PATTERNS_CACHE: RwLock<PatternsCache> = {
 
-        // TODO: Configurations to ARGS!
         let cache = PatternsCache::with_capacity(CFG.cache.regex_patterns_capacity)
             .limit(CFG.cache.regex_patterns_limit); 
 
@@ -156,75 +149,30 @@ pub const DEFAULT_ENCODING : &'static str = "utf-8";
 async fn main() -> std::io::Result<()> {
 
     SimpleLogger::new()
-    .with_level(log::LevelFilter::Debug)
+    .with_level(log::LevelFilter::Info)
     .init().unwrap();
 
     log::info!("Initializing service...");
 
-    // // Service Configurations
-    // let cfg_bind = ARGS.value_of("listen")
-    //     .unwrap_or(&CFG.service.listen);
-    // log::debug!("bind = {}", cfg_bind);
+    // Configurations
+    // Service
+    log::debug!("listen = {}", CFG.service.listen);
+    log::debug!("server_hostname = {}", CFG.service.server_hostname);
+    log::debug!("workers = {}", CFG.service.workers);
+    log::debug!("backlog = {}", CFG.service.backlog);
+    log::debug!("max_connections = {}", CFG.service.max_connections);
+    log::debug!("max_connection_rate = {}", CFG.service.max_connection_rate);
+    log::debug!("keep_alive = {}", CFG.service.keep_alive);
+    log::debug!("client_timeout = {}", CFG.service.client_timeout);
+    log::debug!("client_shutdown = {}", CFG.service.client_shutdown);
+    log::debug!("shutdown_timeout = {}", CFG.service.shutdown_timeout);
 
-    // let cfg_server_hostname = ARGS.value_of("server_hostname")
-    //     .unwrap_or(&CFG.service.server_hostname);
-    // log::debug!("server_hostname = {}", cfg_server_hostname);
+    // Common
+    log::debug!("alt_encoding = {}", CFG.common.alt_encoding);
 
-    // let cfg_workers = match ARGS.value_of("workers") {
-    //     // Some(w) => w.parse().unwrap_or(CFG.service.workers),
-    //     Some(w) => w.parse().expect(&format!("Unable to parse '{}' as workers number.", w)),
-    //     None => CFG.service.workers
-    // };
-    // log::debug!("workers = {}", cfg_workers);
-
-    // let cfg_backlog = match ARGS.value_of("backlog") {
-    //     Some(w) => w.parse().expect(&format!("Unable to parse '{}' as backlog number.", w)),
-    //     None => CFG.service.backlog
-    // };
-    // log::debug!("backlog = {}", cfg_backlog);
-
-    // let cfg_max_connections = match ARGS.value_of("max_connections") {
-    //     Some(w) => w.parse().expect(&format!("Unable to parse '{}' as max_connections number.", w)),
-    //     None => CFG.service.max_connections
-    // };
-    // log::debug!("max_connections = {}", cfg_max_connections);
-    
-    // let cfg_max_connection_rate = match ARGS.value_of("max_connection_rate") {
-    //     Some(w) => w.parse().expect(&format!("Unable to parse '{}' as max_connection_rate number.", w)),
-    //     None => CFG.service.max_connection_rate
-    // };
-    // log::debug!("max_connection_rate = {}", cfg_max_connection_rate);
-
-    // let cfg_keep_alive = match ARGS.value_of("keep_alive") {
-    //     Some(w) => w.parse().expect(&format!("Unable to parse '{}' as keep_alive number.", w)),
-    //     None => CFG.service.keep_alive
-    // };
-    // log::debug!("keep_alive = {}", cfg_keep_alive);
-
-    // let cfg_client_timeout = match ARGS.value_of("client_timeout") {
-    //     Some(w) => w.parse().expect(&format!("Unable to parse '{}' as client_timeout number.", w)),
-    //     None => CFG.service.client_timeout
-    // };
-    // log::debug!("client_timeout = {}", cfg_client_timeout);
-
-    // let cfg_client_shutdown = match ARGS.value_of("client_shutdown") {
-    //     Some(w) => w.parse().expect(&format!("Unable to parse '{}' as client_shutdown number.", w)),
-    //     None => CFG.service.client_shutdown
-    // };
-    // log::debug!("client_shutdown = {}", cfg_client_shutdown);
-
-    // let cfg_shutdown_timeout = match ARGS.value_of("shutdown_timeout") {
-    //     Some(w) => w.parse().expect(&format!("Unable to parse '{}' as shutdown_timeout number.", w)),
-    //     None => CFG.service.shutdown_timeout
-    // };
-    // log::debug!("shutdown_timeout = {}", cfg_shutdown_timeout);
-    
-    // // Common Configurations
-    // log::debug!("alt_encoding = {}", *utils::CFG_ALT_ENCODING);
-    
-    // // Cache Configurations
-    // log::debug!("regex_patterns_capacity = {}", CFG.cache.regex_patterns_capacity);
-    // log::debug!("regex_patterns_limit = {}", CFG.cache.regex_patterns_limit);
+    // Cache
+    log::debug!("regex_patterns_capacity = {}", CFG.cache.regex_patterns_capacity);
+    log::debug!("regex_patterns_limit = {}", CFG.cache.regex_patterns_limit);
 
     HttpServer::new(|| {
         App::new()
@@ -240,16 +188,16 @@ async fn main() -> std::io::Result<()> {
             .service(services::try_decode_mime_subject)
             .service(services::regex_capture_group)
     })
-    .server_hostname(cfg_server_hostname)
-    .workers(cfg_workers)
-    .backlog(cfg_backlog)
-    .max_connections(cfg_max_connections)
-    .max_connection_rate(cfg_max_connection_rate)
-    .keep_alive(cfg_keep_alive)
-    .client_timeout(cfg_client_timeout)
-    .client_shutdown(cfg_client_shutdown)
-    .shutdown_timeout(cfg_shutdown_timeout)
-    .bind(cfg_bind)?
+    .server_hostname(&CFG.service.server_hostname)
+    .workers(CFG.service.workers)
+    .backlog(CFG.service.backlog)
+    .max_connections(CFG.service.max_connections)
+    .max_connection_rate(CFG.service.max_connection_rate)
+    .keep_alive(CFG.service.keep_alive)
+    .client_timeout(CFG.service.client_timeout)
+    .client_shutdown(CFG.service.client_shutdown)
+    .shutdown_timeout(CFG.service.shutdown_timeout)
+    .bind(&CFG.service.listen)?
     .run()
     .await
 }

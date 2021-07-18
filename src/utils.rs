@@ -12,7 +12,7 @@ use encoding::{
     all
 };
 
-use crate::{CFG, ARGS};
+use crate::CFG;
 
 // Unescape code was borrowed from: https://github.com/saghm/unescape-rs.
 // I added my own `unescape_as_bytes()` function and I'll offer this to the author.
@@ -25,11 +25,11 @@ macro_rules! try_option {
     }
 }
 
-lazy_static! {
-    pub static ref CFG_ALT_ENCODING: &'static str = {
-        ARGS.value_of("alt_encoding").unwrap_or(&CFG.common.alt_encoding)
-    };
-}
+// lazy_static! {
+//     pub static ref CFG_ALT_ENCODING: &'static str = {
+//         ARGS.value_of("alt_encoding").unwrap_or(&CFG.common.alt_encoding)
+//     };
+// }
 
 pub const DEFAULT_DECODER_TRAP : DecoderTrap = DecoderTrap::Replace;
 
@@ -392,7 +392,7 @@ pub fn attempt_decode(src: &[u8], encoding: &str) -> DecodingResult {
     Ok(match decode_bytes(src, &encoding, DEFAULT_DECODER_TRAP) {
         Ok(result) => result,
         // Err(_) => match decode_bytes(src, &CFG.common.alt_encoding, DEFAULT_DECODER_TRAP) {
-        Err(_) => match decode_bytes(src, &CFG_ALT_ENCODING, DEFAULT_DECODER_TRAP) {
+        Err(_) => match decode_bytes(src, &CFG.common.alt_encoding, DEFAULT_DECODER_TRAP) {
                     Ok(alt_result) => alt_result,
                     Err(_) => String::from_utf8_lossy(src).to_string()
             }
