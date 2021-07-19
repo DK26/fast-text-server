@@ -400,9 +400,17 @@ pub fn attempt_decode(src: &[u8], encoding: &str) -> DecodingResult {
 
 }
 
+// Sketch
+enum DecodingMimeStates<'a> {
+    HasEncoding(&'a str),
+    NoEncoding,
+    ReadingEncoding,
+    ReadingData
+}
+
 pub fn decode_mime_subject(src: &str) -> DecodingResult {
 
-    // TODO: Currently we're decoding a MIME subject / header that begins with `<codec>?B?`, We need to also address `<codec>?Q?` hexa format.
+    // TODO: Currently we're decoding a MIME subject / header that begins with `<codec>?B?`, We need to also address `<codec>?Q?` hexa format. [The (q)uoted_printable module: https://github.com/staktrace/quoted-printable / https://datatracker.ietf.org/doc/html/rfc2045#section-6.7 ` quoted_printable::decode(&trimmed, quoted_printable::ParseMode::Robust);`]
     // TODO: Check the `mailparse::MailHeader` crate and functionalities.
 
     let mut collect = false;  
@@ -428,12 +436,15 @@ pub fn decode_mime_subject(src: &str) -> DecodingResult {
 
                     // If No encoding was found yet
                     if !has_encoding { 
+                        // TODO: Re-read the encoding on each line.
+                        // TODO: If the encoding changes, decode previous data and then move to accumulate new data for the next encoding [prevent over unnecessary decoding process]
                         
                         // Encoding was collected
                         has_encoding = true;
 
                     }  else  { // Base64 payload was collected
     
+                        // TODO: If `B` -> base64. If `Q` -> quoted_printable
                         let decoded_item = base64::decode(&payload).unwrap();
 
                         payload.clear();
