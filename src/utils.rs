@@ -1,5 +1,5 @@
 #![allow(dead_code)]
-use std::collections::HashMap;
+use std::{collections::HashMap, usize};
 use std::borrow::Cow;
 use std::collections::VecDeque;
 use std::char;
@@ -401,74 +401,173 @@ pub fn attempt_decode(src: &[u8], encoding: &str) -> DecodingResult {
 }
 
 // Sketch
-enum DecodingMimeStates<'a> {
-    HasEncoding(&'a str),
-    NoEncoding,
-    ReadingEncoding,
-    ReadingData
+enum ParsingStage {
+    NewScan,
+    ScanningEncoding,
+    ScanningFormat,
+    ScanningPayload,
+}
+
+#[derive(Clone, Copy)]
+struct ViewRange {
+    start: usize,
+    end: usize,
+}
+
+impl<'a> ViewRange {
+
+    fn new() -> Self {
+        Self {
+            start: 0,
+            end: 0,
+        }
+    }
+
+    fn view(&self, text: &'a str) -> &'a str {
+        &text[self.start..self.end]
+    }
+
+    fn update(&mut self, other: Self) {
+        self.start = other.start;
+        self.end = other.end;
+    }
+
 }
 
 pub fn decode_mime_subject(src: &str) -> DecodingResult {
 
     // TODO: Currently we're decoding a MIME subject / header that begins with `<codec>?B?`, We need to also address `<codec>?Q?` hexa format. [The (q)uoted_printable module: https://github.com/staktrace/quoted-printable / https://datatracker.ietf.org/doc/html/rfc2045#section-6.7 ` quoted_printable::decode(&trimmed, quoted_printable::ParseMode::Robust);`]
-    // TODO: Check the `mailparse::MailHeader` crate and functionalities.
+    // FIXME: What if there is a question mark within the content of a `Q` format message? Check if that is probable and act if necessary.
 
-    let mut collect = false;  
+    let mut current_parsing_stage = ParsingStage::NewScan;
 
-    let mut scanning_encoding = true;
+    // let mut collect = false;  
 
-    let mut has_encoding = false; // If has codec, skip scan only for base64
+    // let mut scanning_encoding = true;
+
+    // let mut has_encoding = false; // If has codec, skip scan only for base64
 
     let mut encoding = String::new();
-
-    let mut payload = String::new();
-
+    let mut final_result = String::new();
     let mut decoded_payload = Vec::<u8>::new();
 
-    // for char in String::from_utf8_lossy(&msg_1).chars() {
-    for char in src.chars() {
-        match char {
+    let mut current_encoding_range = ViewRange::new();
+    let mut prev_encoding_range: Option<ViewRange> = None;
+    let mut payload_view = ViewRange::new();
+
+    let mut start_idx: usize = 0;
+    let mut end_idx: usize = 0;
+
+    let mut payload_format: Option<char> = None;
+
+    for (idx, chr) in src.char_indices() {
+
+        match chr {
+
             '?' => {
-                // We were collecting and now it's time to sum-up
-                if collect { 
 
-                    scanning_encoding = !scanning_encoding;
+                match current_parsing_stage {
 
-                    // If No encoding was found yet
-                    if !has_encoding { 
-                        // TODO: Re-read the encoding on each line.
-                        // TODO: If the encoding changes, decode previous data and then move to accumulate new data for the next encoding [prevent over unnecessary decoding process]
+                    ParsingStage::NewScan => {
+
+                        // Get the index of the next char (Taking UTF-8 varying char sizes into account)
+                        current_encoding_range.start = idx + chr.len_utf8();  
                         
-                        // Encoding was collected
-                        has_encoding = true;
+                        current_parsing_stage = ParsingStage::ScanningEncoding;
 
-                    }  else  { // Base64 payload was collected
-    
-                        // TODO: If `B` -> base64. If `Q` -> quoted_printable
-                        let decoded_item = base64::decode(&payload).unwrap();
+                    },
 
-                        payload.clear();
+                    ParsingStage::ScanningEncoding => {
+
+                        // Get the final, non-inclusive, index of the current char (Taking UTF-8 varying char sizes into account)
+                        current_encoding_range.end = idx + chr.len_utf8(); 
+
+                        // We now have a viewable encoding.
+
+                        // Has the encoding changed? Decode current progress into final result before proceeding.
+                        if let Some(p) = prev_encoding_range {
+
+                            if p.view(&src).to_uppercase() != current_encoding_range.view(&src).to_uppercase() {
+
+                                let payload = attempt_decode(&decoded_payload, &p.view(&src))?;
+
+                                final_result.push_str(&payload);
+
+                            }
+                            
+                        }
+                            
+                        prev_encoding_range = Some(current_encoding_range);
+                    
+
+                        current_parsing_stage = ParsingStage::ScanningFormat;
+
+                    },
+
+                    ParsingStage::ScanningFormat => current_parsing_stage = ParsingStage::ScanningPayload,
+
+                    ParsingStage::ScanningPayload => {
+                        
+                        let decoded_item = match payload_format {
+                            Some('Q') => quoted_printable::decode(&final_result, quoted_printable::ParseMode::Robust).unwrap(),
+                            Some('B') => base64::decode(&final_result).unwrap(),
+                            _ => return Err(Cow::Borrowed("Unknown payload format. Must either be `Q` or `B`."))
+                        };
 
                         decoded_payload.extend(decoded_item);
+
+                        current_parsing_stage = ParsingStage::NewScan;
+
+                    },
+                    
+                };
+
+                // // We were collecting and now it's time to sum-up
+                // if collect { 
+
+                //     scanning_encoding = !scanning_encoding;
+
+                //     // If No encoding was found yet
+                //     if !has_encoding { 
+
+                //         // Encoding was collected
+                //         has_encoding = true;
+
+                //     }  else  { // Base64 payload was collected
     
-                    }
-                }
-                collect = !collect;  // flip
+                //         // Forget previous encoding and recollect.
+                //         has_encoding = false;
+                //         // TODO: If `B` -> base64. If `Q` -> quoted_printable
+                //         let decoded_item = base64::decode(&result).unwrap();
+
+                //         result.clear();
+
+                //         decoded_payload.extend(decoded_item);
+    
+                //     }
+                // }
             },
-            '\\' => {}, 
+
+            '\\' => {},  // Skip backslashes
+
             _ => {
-                if collect {
-                    if !has_encoding {
-                        encoding.push(char);
-                    } else if !scanning_encoding {
-                        payload.push(char);
-                    }
+
+                match current_parsing_stage {
+                    ParsingStage::NewScan => {},
+                    ParsingStage::ScanningEncoding => encoding.push(chr),
+                    ParsingStage::ScanningFormat => payload_format = Some(chr.to_uppercase().next().unwrap()),
+                    ParsingStage::ScanningPayload => final_result.push(chr),  // FIXME: Why into result?
                 }
+                
             }
+
         } // match char
     } // for src.chars()
 
-    attempt_decode(&decoded_payload, &encoding)
+    final_result.push_str(&attempt_decode(&decoded_payload, &encoding)?);
+
+    Ok(final_result)
+
 }
 
 pub struct PatternsCache {
@@ -544,6 +643,23 @@ impl<'a> PatternsCache {
             self.map.clear();
         }
         self.size = 0;
+    }
+
+}
+
+#[cfg(test)]
+mod test {
+
+    use crate::utils::decode_mime_subject;
+
+    #[test]
+    fn test_decode_mime_subject_base64() {
+        assert_eq!(decode_mime_subject("Subject: =?iso-8859-1?B?=oUhvbGEsIHNl8W9yIQ==?=").unwrap().as_str(), "¡Hola, señor!");
+    }
+
+    #[test]
+    fn test_decode_mime_subject_quoted_printable() {
+        assert_eq!(decode_mime_subject("Subject: =?iso-8859-1?Q?=A1Hola,_se=F1or!?=").unwrap().as_str(), "¡Hola, señor!");
     }
 
 }
