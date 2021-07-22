@@ -149,7 +149,7 @@ pub const DEFAULT_ENCODING : &'static str = "utf-8";
 async fn main() -> std::io::Result<()> {
 
     SimpleLogger::new()
-    .with_level(log::LevelFilter::Info)
+    .with_level(log::LevelFilter::Debug)
     .init().unwrap();
 
     log::info!("Initializing service...");

@@ -218,7 +218,7 @@ pub fn decode_bytes(src: &[u8], encoding: &str, trap: DecoderTrap) -> DecodingRe
             all::MAC_CYRILLIC.decode_to(src, trap, &mut src_decoded)?;
             src_decoded
         },
-        "ascii" => {
+        "ascii" | "us-ascii"=> {
             all::ASCII.decode_to(src, trap, &mut src_decoded)?;
             src_decoded
         },
@@ -401,11 +401,16 @@ pub fn attempt_decode(src: &[u8], encoding: &str) -> DecodingResult {
 }
 
 // Sketch
-enum ParsingStage {
+
+enum MimeEncoding {
+    Base64Encoding,
+    QEncoding
+}
+enum ParsingState<'a> {
     NewScan,
+    ScanningCharset,
     ScanningEncoding,
-    ScanningFormat,
-    ScanningPayload,
+    ScanningPayload(&'a MimeEncoding), // Handle special cases of Q-encoding // B - Just copy everything
 }
 
 #[derive(Clone, Copy)]
@@ -434,62 +439,73 @@ impl<'a> ViewRange {
 
 }
 
+fn peak_next_utf8_char<'a>(src: &'a str, current_idx: usize, current_char: &'a char) -> Option<char> {
+    let next_idx = current_idx + current_char.len_utf8();
+    if next_idx < src.len() {
+        Some(src[next_idx..next_idx+1].chars().next().unwrap())
+    } else {
+        None
+    }
+}
+
 pub fn decode_mime_subject(src: &str) -> DecodingResult {
+
+    // TODO: When check if ASCII. In this case just return as is.
 
     // TODO: Currently we're decoding a MIME subject / header that begins with `<codec>?B?`, We need to also address `<codec>?Q?` hexa format. [The (q)uoted_printable module: https://github.com/staktrace/quoted-printable / https://datatracker.ietf.org/doc/html/rfc2045#section-6.7 ` quoted_printable::decode(&trimmed, quoted_printable::ParseMode::Robust);`]
     // FIXME: What if there is a question mark within the content of a `Q` format message? Check if that is probable and act if necessary.
 
-    let mut current_parsing_stage = ParsingStage::NewScan;
+    let mut parsing_state = ParsingState::NewScan;
 
-    // let mut collect = false;  
-
-    // let mut scanning_encoding = true;
-
-    // let mut has_encoding = false; // If has codec, skip scan only for base64
-
-    let mut encoding = String::new();
+    let mut encoded_payload = String::new();
     let mut final_result = String::new();
     let mut decoded_payload = Vec::<u8>::new();
 
-    let mut current_encoding_range = ViewRange::new();
-    let mut prev_encoding_range: Option<ViewRange> = None;
-    let mut payload_view = ViewRange::new();
+    let mut current_charset_range = ViewRange::new();
+    let mut prev_charset_range: Option<ViewRange> = None;
 
-    let mut start_idx: usize = 0;
-    let mut end_idx: usize = 0;
+    let mut payload_encoding: Option<&MimeEncoding> = None;
 
-    let mut payload_format: Option<char> = None;
+    for (n, (idx, chr)) in src.char_indices().enumerate() {
 
-    for (idx, chr) in src.char_indices() {
+        match parsing_state {
 
-        match chr {
+            ParsingState::NewScan => { 
 
-            '?' => {
+                match chr {
 
-                match current_parsing_stage {
-
-                    ParsingStage::NewScan => {
-
+                    '?' => {
                         // Get the index of the next char (Taking UTF-8 varying char sizes into account)
-                        current_encoding_range.start = idx + chr.len_utf8();  
-                        
-                        current_parsing_stage = ParsingStage::ScanningEncoding;
+                        current_charset_range.start = idx + chr.len_utf8(); 
 
+                        parsing_state = ParsingState::ScanningCharset
                     },
+                    _ => {}
 
-                    ParsingStage::ScanningEncoding => {
+                }
+            },
+            ParsingState::ScanningCharset =>  {
 
-                        // Get the final, non-inclusive, index of the current char (Taking UTF-8 varying char sizes into account)
-                        current_encoding_range.end = idx + chr.len_utf8(); 
+                match chr {
 
-                        // We now have a viewable encoding.
+                    '?' => {
 
-                        // Has the encoding changed? Decode current progress into final result before proceeding.
-                        if let Some(p) = prev_encoding_range {
+                        // Get the final and exclusive index of the current char (Taking UTF-8 varying char sizes into account)
+                        // current_charset_range.end = idx + chr.len_utf8(); 
+                        current_charset_range.end = idx; 
 
-                            if p.view(&src).to_uppercase() != current_encoding_range.view(&src).to_uppercase() {
+                        // We now have a viewable charset.
+                        // log::debug!("Current charset: {}", current_charset_range.view(&src));
 
+                        // Has the charset changed? If so, decode our current progress into the final result before proceeding.
+                        if let Some(p) = prev_charset_range {
+
+                            if p.view(&src).to_uppercase() != current_charset_range.view(&src).to_uppercase() {
+
+                                // log::debug!("Previous charset: {}", p.view(&src));
                                 let payload = attempt_decode(&decoded_payload, &p.view(&src))?;
+
+                                decoded_payload.clear();
 
                                 final_result.push_str(&payload);
 
@@ -497,74 +513,211 @@ pub fn decode_mime_subject(src: &str) -> DecodingResult {
                             
                         }
                             
-                        prev_encoding_range = Some(current_encoding_range);
-                    
+                        prev_charset_range = Some(current_charset_range);
 
-                        current_parsing_stage = ParsingStage::ScanningFormat;
-
-                    },
-
-                    ParsingStage::ScanningFormat => current_parsing_stage = ParsingStage::ScanningPayload,
-
-                    ParsingStage::ScanningPayload => {
-                        
-                        let decoded_item = match payload_format {
-                            Some('Q') => quoted_printable::decode(&final_result, quoted_printable::ParseMode::Robust).unwrap(),
-                            Some('B') => base64::decode(&final_result).unwrap(),
-                            _ => return Err(Cow::Borrowed("Unknown payload format. Must either be `Q` or `B`."))
-                        };
-
-                        decoded_payload.extend(decoded_item);
-
-                        current_parsing_stage = ParsingStage::NewScan;
+                        parsing_state = ParsingState::ScanningEncoding
 
                     },
-                    
-                };
-
-                // // We were collecting and now it's time to sum-up
-                // if collect { 
-
-                //     scanning_encoding = !scanning_encoding;
-
-                //     // If No encoding was found yet
-                //     if !has_encoding { 
-
-                //         // Encoding was collected
-                //         has_encoding = true;
-
-                //     }  else  { // Base64 payload was collected
-    
-                //         // Forget previous encoding and recollect.
-                //         has_encoding = false;
-                //         // TODO: If `B` -> base64. If `Q` -> quoted_printable
-                //         let decoded_item = base64::decode(&result).unwrap();
-
-                //         result.clear();
-
-                //         decoded_payload.extend(decoded_item);
-    
-                //     }
-                // }
-            },
-
-            '\\' => {},  // Skip backslashes
-
-            _ => {
-
-                match current_parsing_stage {
-                    ParsingStage::NewScan => {},
-                    ParsingStage::ScanningEncoding => encoding.push(chr),
-                    ParsingStage::ScanningFormat => payload_format = Some(chr.to_uppercase().next().unwrap()),
-                    ParsingStage::ScanningPayload => final_result.push(chr),  // FIXME: Why into result?
+                    _ => {}
                 }
+            },
+            ParsingState::ScanningEncoding => {
+                match chr {
+                    '?' => {
+                        match payload_encoding {
+                            Some(encoding) => parsing_state = ParsingState::ScanningPayload(encoding),
+                            None => return Ok(src.to_owned()) // TODO: Return `Cow`
+                        }
+                    },
+                    'B' | 'b' => payload_encoding = Some(&MimeEncoding::Base64Encoding),
+                    'Q' | 'q' => payload_encoding = Some(&MimeEncoding::QEncoding),
+                    _ => {}
+                }
+            },
+            ParsingState::ScanningPayload(encoding) => {
+                match encoding {
+                    MimeEncoding::Base64Encoding => {
+                        match chr {
+                            '\\' => { /* Just ignore and cancel the backslash */ },
+                            '?' => {
+
+                                // log::debug!("Base64: {}", encoded_payload);
+                                let payload = base64::decode(&encoded_payload).unwrap();
+                                
+                                encoded_payload.clear();
+
+                                decoded_payload.extend(payload);
+
+                                parsing_state = ParsingState::NewScan
+                            },
+                            _ => encoded_payload.push(chr)
+                        }
+                    },
+                    MimeEncoding::QEncoding => {
+                        match chr {
+                            // Great news about Q encoding the `?` and `=` chars: "The ASCII codes 
+                            // for the question mark ("?") and equals sign ("=") may not be represented 
+                            // directly as they are used to delimit the encoded-word." 
+                            // "..The ASCII code for space may not be represented directly because it 
+                            // could cause older parsers to split up the encoded word undesirably.
+                            // To make the encoding smaller and easier to read the underscore is used to
+                            // represent the ASCII code for space creating the side effect that underscore 
+                            // cannot be represented directly." -- Wikipedia
+                            '\\' => {
+                                if let Some(next_chr) = src.chars().nth(n + 1) {
+                                    match next_chr {
+                                        '=' => { /* Just ignore and cancel the backslash */ },
+                                        _ => encoded_payload.push('\\')
+                                    }
+                                }
+                            },
+                            '_' => encoded_payload.push(' '),
+                            '?' => {
+
+                                // log::debug!("Q-Encoding: {}", encoded_payload);
+                                let payload = quoted_printable::decode(&encoded_payload, quoted_printable::ParseMode::Robust).unwrap();
+                                
+                                encoded_payload.clear();
+
+                                decoded_payload.extend(payload);
+
+                                parsing_state = ParsingState::NewScan;
+                            },
+                            _ => encoded_payload.push(chr)
+                        }
+                    }
+                }
+            },
+        }
+    }
+
+    //     match chr {
+
+            
+
+    //         '?' => {  // Great news about Q encoding the `?` and `=` chars: "The ASCII codes for the question mark ("?") and equals sign ("=") may not be represented directly as they are used to delimit the encoded-word." -- Wikipedia
+
+    //             match parsing_state {
+
+    //                 ParsingState::NewScan => {
+
+    //                     // Get the index of the next char (Taking UTF-8 varying char sizes into account)
+    //                     current_charset_range.start = idx + chr.len_utf8();  
+                        
+    //                     parsing_state = ParsingState::ScanningCharset;
+
+    //                 },
+
+    //                 ParsingState::ScanningCharset => {
+
+    //                     // Get the final, non-inclusive, index of the current char (Taking UTF-8 varying char sizes into account)
+    //                     current_charset_range.end = idx + chr.len_utf8(); 
+
+    //                     // We now have a viewable encoding.
+
+    //                     // Has the encoding changed? Decode current progress into final result before proceeding.
+    //                     if let Some(p) = prev_charset_range {
+
+    //                         if p.view(&src).to_uppercase() != current_charset_range.view(&src).to_uppercase() {
+
+    //                             let payload = attempt_decode(&decoded_payload, &p.view(&src))?;
+
+    //                             final_result.push_str(&payload);
+
+    //                         }
+                            
+    //                     }
+                            
+    //                     prev_charset_range = Some(current_charset_range);
+
+    //                     parsing_state = ParsingState::ScanningEncoding;
+
+    //                 },
+
+    //                 ParsingState::ScanningEncoding => parsing_state = ParsingState::ScanningPayload,
+
+    //                 ParsingState::ScanningPayload => {
+                        
+    //                     let decoded_item = match payload_encoding {
+    //                         Some('B' | 'b') => base64::decode(&final_result).unwrap(),
+    //                         // Some('Q' | 'q') => quoted_printable::decode(&final_result, quoted_printable::ParseMode::Robust).unwrap(),
+    //                         Some('Q' | 'q') => {
+                            
+    //                             // TODO: Replace underscore with white space: Q-Encoding is different from Quoted-Printable.
+    //                             quoted_printable::decode(&final_result, quoted_printable::ParseMode::Robust).unwrap()
+                            
+    //                         },
+    //                         Some(v) => return Err(Cow::Owned(format!("Unknown payload format '{}'. Must be either `B` or `Q`.", v))),
+    //                         _ => return Err(Cow::Borrowed("No payload format was found."))
+    //                     };
+
+    //                     decoded_payload.extend(decoded_item);
+
+    //                     parsing_state = ParsingState::NewScan;
+
+    //                     /* Reference from the `mailparse` crate: header.rs
+
+    //                         let to_decode = input.replace("_", " ");
+    //                         let trimmed = to_decode.trim_end();
+    //                         let mut d = quoted_printable::decode(&trimmed, quoted_printable::ParseMode::Robust);
+    //                         if d.is_ok() && to_decode.len() != trimmed.len() {
+    //                             d.as_mut()
+    //                                 .unwrap()
+    //                                 .extend_from_slice(to_decode[trimmed.len()..].as_bytes());
+    //                         }
+    //                         d.ok()?
+    //                     */
+
+    //                 },
+                    
+    //             };
+
+    //             // // We were collecting and now it's time to sum-up
+    //             // if collect { 
+
+    //             //     scanning_encoding = !scanning_encoding;
+
+    //             //     // If No encoding was found yet
+    //             //     if !has_encoding { 
+
+    //             //         // Encoding was collected
+    //             //         has_encoding = true;
+
+    //             //     }  else  { // Base64 payload was collected
+    
+    //             //         // Forget previous encoding and recollect.
+    //             //         has_encoding = false;
+    //             //         // TODO: If `B` -> base64. If `Q` -> quoted_printable
+    //             //         let decoded_item = base64::decode(&result).unwrap();
+
+    //             //         result.clear();
+
+    //             //         decoded_payload.extend(decoded_item);
+    
+    //             //     }
+    //             // }
+    //         },
+
+    //         '\\' => {},  // Skip backslashes  // FIXME: Can there be a C:\ Path under Q-Encoding?
+
+    //         _ => {
+
+    //             match parsing_state {
+    //                 ParsingState::NewScan => {},
+    //                 ParsingState::ScanningCharset => {},  // We view into the encoding when needed.
+    //                 // ParsingStage::ScanningFormat => payload_format = Some(chr.to_uppercase().next().unwrap()),  // Or to check: 'B' | 'b', 'Q' | 'q' ?
+    //                 ParsingState::ScanningEncoding => payload_encoding = Some(chr),
+    //                 ParsingState::ScanningPayload => encoded_payload.push(chr),  // We copy the correct values only
+    //             }
                 
-            }
+    //         }
 
-        } // match char
-    } // for src.chars()
+    //     } // match char
+    // } // for src.chars()
+    
+    let payload = attempt_decode(&decoded_payload, &current_charset_range.view(&src))?;
 
-    final_result.push_str(&attempt_decode(&decoded_payload, &encoding)?);
+    final_result.push_str(&payload);
 
     Ok(final_result)
 
