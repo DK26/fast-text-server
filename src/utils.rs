@@ -3,6 +3,8 @@ use std::{collections::HashMap, usize};
 use std::borrow::Cow;
 use std::collections::VecDeque;
 use std::char;
+use base64::DecodeError;
+use quoted_printable::QuotedPrintableError;
 use regex::Regex;
 
 // use std::string::FromUtf8Error;
@@ -407,6 +409,7 @@ enum MimeEncoding {
     QEncoding
 }
 enum ParsingState<'a> {
+    RawAscii,
     NewScan,
     ScanningCharset,
     ScanningEncoding,
@@ -439,16 +442,16 @@ impl<'a> ViewRange {
 
 }
 
-fn peak_next_utf8_char<'a>(src: &'a str, current_idx: usize, current_char: &'a char) -> Option<char> {
-    let next_idx = current_idx + current_char.len_utf8();
-    if next_idx < src.len() {
-        Some(src[next_idx..next_idx+1].chars().next().unwrap())
-    } else {
-        None
-    }
+#[derive(Debug)]
+pub enum ParsingError {
+    DecodingCharsetError(Cow<'static, str>),
+    DecodingBase64Error(DecodeError),
+    QDecodingError(QuotedPrintableError),
+    
 }
 
-pub fn decode_mime_subject(src: &str) -> DecodingResult {
+// pub fn decode_mime_subject(src: &str) -> DecodingResult {
+pub fn decode_mime_subject(src: &str) -> Result<UTF8String, ParsingError>  {
 
     // TODO: When check if ASCII. In this case just return as is.
 
@@ -470,6 +473,11 @@ pub fn decode_mime_subject(src: &str) -> DecodingResult {
 
         match parsing_state {
 
+            ParsingState::RawAscii => {
+                // match chr {
+                //     '=' => {},
+                // }
+            },
             ParsingState::NewScan => { 
 
                 match chr {
@@ -503,7 +511,10 @@ pub fn decode_mime_subject(src: &str) -> DecodingResult {
                             if p.view(&src).to_uppercase() != current_charset_range.view(&src).to_uppercase() {
 
                                 // log::debug!("Previous charset: {}", p.view(&src));
-                                let payload = attempt_decode(&decoded_payload, &p.view(&src))?;
+                                let payload = match attempt_decode(&decoded_payload, &p.view(&src)) {
+                                    Ok(p) => p,
+                                    Err(e) => return Err(ParsingError::DecodingCharsetError(e)),
+                                };
 
                                 decoded_payload.clear();
 
@@ -542,7 +553,10 @@ pub fn decode_mime_subject(src: &str) -> DecodingResult {
                             '?' => {
 
                                 // log::debug!("Base64: {}", encoded_payload);
-                                let payload = base64::decode(&encoded_payload).unwrap();
+                                let payload = match base64::decode(&encoded_payload) {
+                                    Ok(p) => p,
+                                    Err(e) => return Err(ParsingError::DecodingBase64Error(e)),
+                                };
                                 
                                 encoded_payload.clear();
 
@@ -575,7 +589,10 @@ pub fn decode_mime_subject(src: &str) -> DecodingResult {
                             '?' => {
 
                                 // log::debug!("Q-Encoding: {}", encoded_payload);
-                                let payload = quoted_printable::decode(&encoded_payload, quoted_printable::ParseMode::Robust).unwrap();
+                                let payload = match quoted_printable::decode(&encoded_payload, quoted_printable::ParseMode::Robust) {
+                                    Ok(p) => p,
+                                    Err(e) => return Err(ParsingError::QDecodingError(e)),
+                                };
                                 
                                 encoded_payload.clear();
 
@@ -715,7 +732,10 @@ pub fn decode_mime_subject(src: &str) -> DecodingResult {
     //     } // match char
     // } // for src.chars()
     
-    let payload = attempt_decode(&decoded_payload, &current_charset_range.view(&src))?;
+    let payload = match attempt_decode(&decoded_payload, &current_charset_range.view(&src)) {
+        Ok(p) => p,
+        Err(e) => return Err(ParsingError::DecodingCharsetError(e)),
+    };
 
     final_result.push_str(&payload);
 
