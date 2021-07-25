@@ -712,16 +712,16 @@ impl<'a> PatternsCache {
 #[cfg(test)]
 mod test {
 
-    use crate::utils::manual_decode_mime_subject;
+    // use crate::utils::manual_decode_mime_subject;
 
-    #[test]
-    fn test_decode_mime_subject_base64() {
-        assert_eq!(manual_decode_mime_subject("Subject: =?iso-8859-1?B?=oUhvbGEsIHNl8W9yIQ==?=").unwrap().as_str(), "¡Hola, señor!");
-    }
+    // #[test]
+    // fn test_decode_mime_subject_base64() {
+    //     assert_eq!(manual_decode_mime_subject("Subject: =?iso-8859-1?B?=oUhvbGEsIHNl8W9yIQ==?=").unwrap().as_str(), "¡Hola, señor!");
+    // }
 
-    #[test]
-    fn test_decode_mime_subject_quoted_printable() {
-        assert_eq!(manual_decode_mime_subject("Subject: =?iso-8859-1?Q?=A1Hola,_se=F1or!?=").unwrap().as_str(), "¡Hola, señor!");
-    }
+    // #[test]
+    // fn test_decode_mime_subject_quoted_printable() {
+    //     assert_eq!(manual_decode_mime_subject("Subject: =?iso-8859-1?Q?=A1Hola,_se=F1or!?=").unwrap().as_str(), "¡Hola, señor!");
+    // }
 
 }
