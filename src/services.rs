@@ -79,13 +79,38 @@ pub async fn decode_base64_encoding(web::Path((encoding,)): web::Path<(String,)>
 #[post("/decode_mime_subject")]
 pub async fn decode_mime_subject(req_body: String) -> impl Responder {
 
-    let response = match utils::decode_mime_subject(&req_body) {
-        Ok(r) => r,
-        Err(e) => {
-            log::debug!("{:?}", e);
-            req_body
-        },
+    // let response = match utils::decode_mime_subject(&req_body) {
+    //     Ok(r) => r,
+    //     Err(e) => {
+    //         log::debug!("{:?}", e);
+    //         req_body
+    //     },
+    // };
+
+    let normalized_req_body = format!(":{}", utils::normalize_mime(&req_body));
+
+    let (parsed, _) = parse_header(&normalized_req_body.as_bytes()).unwrap();
+
+    let parsed_value = parsed.get_value();
+
+    // let response = if parsed_value == req_body {
+    let response = if req_body.starts_with(&parsed_value) {
+        
+        // FIXME: (Optional) Parsed value is getting rid of `\r\n` from `req_body`. If necessary, should be reconstructed.
+
+        let unescaped = utils::unescape_as_bytes(&parsed.get_value()).expect("Unable to unescape request's body.");
+        utils::attempt_decode(&unescaped, &DEFAULT_ENCODING).unwrap()
+
+    } else {
+        parsed_value
     };
+
+    
+    // let unescaped_req_body = utils::unescape(&parsed.get_value()).expect("Unable to unescape request's body.");
+
+    // let response = utils::attempt_decode(&unescaped_req_body, &DEFAULT_ENCODING).unwrap();
+
+    // let response = unescaped_req_body;
 
     HttpResponse::Ok().body(response)
 
@@ -100,16 +125,14 @@ pub async fn decode_mime_subject_rfc822(req_body: web::Bytes) -> impl Responder 
 
 }
 
-#[post("/try_decode_mime_subject")]
-pub async fn try_decode_mime_subject(req_body: String) -> impl Responder {
+// #[post("/try_decode_mime_subject")]
+// pub async fn try_decode_mime_subject(req_body: String) -> impl Responder {
 
-    // TODO: Attempt decoding MIME or return original value
+//     let response = utils::decode_mime_subject(&req_body).unwrap();
 
-    let response = utils::decode_mime_subject(&req_body).unwrap();
+//     HttpResponse::Ok().body(response)
 
-    HttpResponse::Ok().body(response)
-
-}
+// }
 
 #[post("/regex_capture_group")]
 pub async fn regex_capture_group(request: web::Json<RegexData>) -> impl Responder { 
