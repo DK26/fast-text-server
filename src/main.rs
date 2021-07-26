@@ -21,7 +21,7 @@ fn arg_matches<'a>() -> ArgMatches<'a> {
     let about = format!("Fast, lightweight RESTful API services for processing, parsing & modifying UTF-8 text messages.
     \nAuthor: {}\nSource: https://github.com/DK26/fast-webhooks", env!("CARGO_PKG_AUTHORS"));
  
-    clap::App::new("Fast-Webhooks")
+    clap::App::new(env!("CARGO_PKG_NAME"))
         .version(env!("CARGO_PKG_VERSION"))
         .about(about.as_str())
         .arg(
@@ -131,7 +131,12 @@ fn arg_matches<'a>() -> ArgMatches<'a> {
 
 lazy_static! {
 
-    static ref CFG: Config = cfglib::init_cfg(arg_matches());
+    static ref CFG: Config = cfglib::init_cfg({
+        let cfg = arg_matches();
+        println!("{} {}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
+        log::info!("Initializing service...");
+        cfg
+    });
 
     static ref PATTERNS_CACHE: RwLock<PatternsCache> = {
 
@@ -151,10 +156,6 @@ async fn main() -> std::io::Result<()> {
     SimpleLogger::new()
     .with_level(log::LevelFilter::Info)
     .init().unwrap();
-
-    // FIXME: This seem to appear during `clap` help menus.
-    // TODO: Print version
-    log::info!("Initializing service...");  
 
     // Configurations
     // Service

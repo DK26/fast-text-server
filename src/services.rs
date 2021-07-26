@@ -77,7 +77,9 @@ pub async fn decode_base64_charset(web::Path((charset,)): web::Path<(String,)>, 
 #[post("/decode_mime_header")]
 pub async fn decode_mime_header(req_body: String) -> impl Responder {
 
-    let normalized_req_body = utils::normalize_mime(&req_body);
+    let normalized_req_body = utils::normalize_mime(&req_body)
+    .replace(" =?", "\r\n=?")
+    .replace("?= ", "?=\r\n");
     
     // let response: String = normalized_req_body.lines()
     //     .map(|x| {
@@ -92,7 +94,7 @@ pub async fn decode_mime_header(req_body: String) -> impl Responder {
     let mut response = String::new();
 
     for line in normalized_req_body.lines() {
-
+ 
         let trimmed_line = line.trim_start();
 
         if trimmed_line.starts_with("=?") && trimmed_line.ends_with("?=") {
