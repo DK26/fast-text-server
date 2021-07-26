@@ -77,22 +77,41 @@ pub async fn decode_base64_encoding(web::Path((encoding,)): web::Path<(String,)>
 #[post("/decode_mime_subject")]
 pub async fn decode_mime_subject(req_body: String) -> impl Responder {
 
-    let normalized_req_body = format!(":{}", utils::normalize_mime(&req_body));
+    let normalized_req_body = utils::normalize_mime(&req_body);
+    
+    // let response: String = normalized_req_body.lines()
+    //     .map(|x| {
+    //         let prefixed_x = format!(":{}", x);
+    //         let (parsed, _) = parse_header(prefixed_x.as_bytes()).unwrap();
+    //         parsed.get_value()
+    //     })
+    //     .map(|x| utils::unescape_as_bytes(&x).expect("Unable to unescape request's body.")) 
+    //     .map(|x| utils::attempt_decode(&x, &DEFAULT_ENCODING).unwrap())
+    //     .collect();
+        
+    let mut response = String::new();
 
-    let (parsed, _) = parse_header(&normalized_req_body.as_bytes()).unwrap();
+    for line in normalized_req_body.lines() {
 
-    let parsed_value = parsed.get_value();
+        let trimmed_line = line.trim_start();
 
-    let response = if req_body.starts_with(&parsed_value) {
+        if trimmed_line.starts_with("=?") && trimmed_line.ends_with("?=") {
 
-        // FIXME: (Optional) Parsed value is getting rid of `\r\n` from `req_body`. If necessary, should be reconstructed.
+            let prefixed_line = format!(":{}", trimmed_line);
+            let (parsed, _) = parse_header(prefixed_line.as_bytes()).unwrap();
+            response.push_str(&parsed.get_value())
 
-        let unescaped = utils::unescape_as_bytes(&parsed.get_value()).expect("Unable to unescape request's body.");
-        utils::attempt_decode(&unescaped, &DEFAULT_ENCODING).unwrap()
-
-    } else {
-        parsed_value
-    };
+        } else {
+            
+            if trimmed_line.contains("\\x") || trimmed_line.contains("\\u") {
+                let unescaped_line_bytes = utils::unescape_as_bytes(&trimmed_line).expect("Unable to unescape request's body.");
+                let unescaped_line = utils::attempt_decode(&unescaped_line_bytes, &DEFAULT_ENCODING).unwrap();
+                response.push_str(&unescaped_line)
+            } else { 
+                response.push_str(&trimmed_line)
+            }
+        }
+    }
 
     HttpResponse::Ok().body(response)
 
