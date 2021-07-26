@@ -8,7 +8,6 @@ use std::{
 };
 use std::env::current_exe;
 
-
 enum CfgFileError {
     FailedToOpenCfgFile(std::io::Error),
     FailedToReadCfgFile(std::io::Error),
@@ -105,7 +104,6 @@ impl Config {
     fn from_arg_matches(arg_matches: ArgMatches, base: Config) -> Self {
 
         Self {
-
             service : ServiceConfig {
                 listen: parse_arg(&arg_matches, "listen", base.service.listen),
                 server_hostname: parse_arg(&arg_matches, "server_hostname", base.service.server_hostname),

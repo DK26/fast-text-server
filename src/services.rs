@@ -30,6 +30,9 @@ pub async fn echo(req_body: String) -> impl Responder {
     HttpResponse::Ok().body(req_body)
 }
 
+// TODO: Add `uptime()` End-Point
+// TODO: Add HTML playground for the API
+
 #[post("/unescape")]
 pub async fn unescape(req_body: String) -> impl Responder {
 
@@ -41,12 +44,12 @@ pub async fn unescape(req_body: String) -> impl Responder {
 
 }
 
-#[post("/unescape/{encoding}")]
-pub async fn unescape_decode(web::Path((encoding,)): web::Path<(String,)>, req_body: String) -> impl Responder {
+#[post("/unescape/{charset}")]
+pub async fn unescape_decode(web::Path((charset,)): web::Path<(String,)>, req_body: String) -> impl Responder {
 
     let unescaped_req_body = utils::unescape_as_bytes(&req_body).expect("Unable to unescape request's body.");
 
-    let response = utils::attempt_decode(&unescaped_req_body, &encoding).unwrap();
+    let response = utils::attempt_decode(&unescaped_req_body, &charset).unwrap();
 
     HttpResponse::Ok().body(response)
 
@@ -78,8 +81,8 @@ pub async fn decode_base64_charset(web::Path((charset,)): web::Path<(String,)>, 
 pub async fn decode_mime_header(req_body: String) -> impl Responder {
 
     let normalized_req_body = utils::normalize_mime(&req_body)
-    .replace(" =?", "\r\n=?")
-    .replace("?= ", "?=\r\n");
+        .replace(" =?", "\r\n=?")
+        .replace("?= ", "?=\r\n");
     
     // let response: String = normalized_req_body.lines()
     //     .map(|x| {
@@ -137,7 +140,11 @@ pub async fn regex_capture_group(request: web::Json<RegexData>) -> impl Responde
 
     let caps = re.captures(&request.text).unwrap();
 
-    let response = caps.get(1).unwrap().as_str().to_owned();
+    let response = caps
+        .get(1)
+        .unwrap()
+        .as_str()
+        .to_owned();
 
     HttpResponse::Ok().body(response)
 }
