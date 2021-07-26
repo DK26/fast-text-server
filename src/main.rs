@@ -18,7 +18,7 @@ use clap::{ArgMatches, Arg};
 
 fn arg_matches<'a>() -> ArgMatches<'a> {
 
-    let about = format!("Fast, lightweight RESTful API services for processing & modifying UTF-8 text messages.
+    let about = format!("Fast, lightweight RESTful API services for processing, parsing & modifying UTF-8 text messages.
     \nAuthor: {}\nSource: https://github.com/DK26/fast-webhooks", env!("CARGO_PKG_AUTHORS"));
  
     clap::App::new("Fast-Webhooks")
@@ -152,7 +152,9 @@ async fn main() -> std::io::Result<()> {
     .with_level(log::LevelFilter::Info)
     .init().unwrap();
 
-    log::info!("Initializing service...");
+    // FIXME: This seem to appear during `clap` help menus.
+    // TODO: Print version
+    log::info!("Initializing service...");  
 
     // Configurations
     // Service
@@ -183,9 +185,9 @@ async fn main() -> std::io::Result<()> {
             // .service(services::json_test)
             .service(services::unescape_decode)
             .service(services::decode_base64)
-            .service(services::decode_base64_encoding)
-            .service(services::decode_mime_subject)
-            .service(services::decode_mime_subject_rfc822)
+            .service(services::decode_base64_charset)
+            .service(services::decode_mime_header)
+            .service(services::decode_mime_header_rfc822)
             .service(services::regex_capture_group)
     })
     .server_hostname(&CFG.service.server_hostname)

@@ -63,19 +63,19 @@ pub async fn decode_base64(req_body: String) -> impl Responder {
 
 }
 
-#[post("/decode_base64/{encoding}")]
-pub async fn decode_base64_encoding(web::Path((encoding,)): web::Path<(String,)>, req_body: String) -> impl Responder {
+#[post("/decode_base64/{charset}")]
+pub async fn decode_base64_charset(web::Path((charset,)): web::Path<(String,)>, req_body: String) -> impl Responder {
 
     let raw_payload = base64::decode(&req_body).expect("Unable to decode base64.");
 
-    let response = utils::attempt_decode(&raw_payload, &encoding).unwrap();
+    let response = utils::attempt_decode(&raw_payload, &charset).unwrap();
 
     HttpResponse::Ok().body(response)
 
 }
 
-#[post("/decode_mime_subject")]
-pub async fn decode_mime_subject(req_body: String) -> impl Responder {
+#[post("/decode_mime_header")]
+pub async fn decode_mime_header(req_body: String) -> impl Responder {
 
     let normalized_req_body = utils::normalize_mime(&req_body);
     
@@ -117,8 +117,8 @@ pub async fn decode_mime_subject(req_body: String) -> impl Responder {
 
 }
 
-#[post("/decode_mime_subject/rfc822")]
-pub async fn decode_mime_subject_rfc822(req_body: web::Bytes) -> impl Responder {
+#[post("/decode_mime_header/rfc822")]
+pub async fn decode_mime_header_rfc822(req_body: web::Bytes) -> impl Responder {
 
     let (parsed, _) = parse_header(&req_body).unwrap();
 
