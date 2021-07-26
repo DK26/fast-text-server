@@ -27,12 +27,6 @@ macro_rules! try_option {
     }
 }
 
-// lazy_static! {
-//     pub static ref CFG_ALT_ENCODING: &'static str = {
-//         ARGS.value_of("alt_encoding").unwrap_or(&CFG.common.alt_encoding)
-//     };
-// }
-
 pub const DEFAULT_DECODER_TRAP : DecoderTrap = DecoderTrap::Replace;
 
 pub type UTF8String = String;
