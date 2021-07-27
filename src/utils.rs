@@ -403,7 +403,9 @@ pub fn normalize_mime(mime: &str) -> String {
                         .replace(r"\n","\n")
                         .replace(r"\r","\r")
                         .replace(r"\t","\t")
-                        .replace(r"\=", "=");
+                        .replace(r"\=", "=")
+                        .replace(" =?", "\r\n=?")
+                        .replace("?= ", "?=\r\n");
     mime
 }
 
