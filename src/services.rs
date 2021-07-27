@@ -30,7 +30,7 @@ pub async fn echo(req_body: String) -> impl Responder {
     HttpResponse::Ok().body(req_body)
 }
 
-// TODO: Add `uptime()` End-Point
+// TODO: Get statistics: uptime, concurrent connections, bandwidth usage, CPU & RAM.
 // TODO: Add HTML playground for the API
 
 #[post("/unescape")]
