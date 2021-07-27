@@ -9,7 +9,7 @@ use actix_web::{
 use mailparse::parse_header;
 
 use crate::utils;
-use crate::DEFAULT_ENCODING;
+use crate::DEFAULT_CHARSET;
 use crate::PATTERNS_CACHE;
 
 #[derive(Deserialize, Debug)]
@@ -38,18 +38,52 @@ pub async fn unescape(req_body: String) -> impl Responder {
 
     let unescaped_req_body = utils::unescape_as_bytes(&req_body).expect("Unable to unescape request's body.");
 
-    let response = utils::attempt_decode(&unescaped_req_body, &DEFAULT_ENCODING).unwrap();
+    let response = utils::attempt_decode(&unescaped_req_body, &DEFAULT_CHARSET).unwrap();
 
     HttpResponse::Ok().body(response)
 
 }
 
 #[post("/unescape/{charset}")]
-pub async fn unescape_decode(web::Path((charset,)): web::Path<(String,)>, req_body: String) -> impl Responder {
+pub async fn unescape_charset(web::Path((charset,)): web::Path<(String,)>, req_body: String) -> impl Responder {
 
     let unescaped_req_body = utils::unescape_as_bytes(&req_body).expect("Unable to unescape request's body.");
 
     let response = utils::attempt_decode(&unescaped_req_body, &charset).unwrap();
+
+    HttpResponse::Ok().body(response)
+
+}
+
+#[post("/decode_quoted_printable")]
+pub async fn decode_quoted_printable(req_body: String) -> impl Responder {
+
+    // let response = match quoted_printable::decode(&req_body, quoted_printable::ParseMode::Robust) {
+    //     Ok(v) => {
+    //         utils::attempt_decode(&v, &DEFAULT_CHARSET).unwrap()
+    //     },
+    //     Err(_) => {
+    //         return HttpResponse::Ok().body(req_body)
+    //     }
+    // };
+
+    let response = utils::decode_quoted_printable(req_body,&DEFAULT_CHARSET);
+
+    HttpResponse::Ok().body(response)
+
+}
+
+#[post("/decode_quoted_printable/{charset}")]
+pub async fn decode_quoted_printable_charset(web::Path((charset,)): web::Path<(String,)>, req_body: String) -> impl Responder {
+
+    let response = match quoted_printable::decode(&req_body, quoted_printable::ParseMode::Robust) {
+        Ok(v) => {
+            utils::attempt_decode(&v, &charset).unwrap()
+        },
+        Err(_) => {
+            return HttpResponse::Ok().body(req_body)
+        }
+    };
 
     HttpResponse::Ok().body(response)
 
@@ -60,7 +94,7 @@ pub async fn decode_base64(req_body: String) -> impl Responder {
 
     let raw_payload = base64::decode(&req_body).expect("Unable to decode base64.");
 
-    let response = utils::attempt_decode(&raw_payload, &DEFAULT_ENCODING).unwrap();
+    let response = utils::attempt_decode(&raw_payload, &DEFAULT_CHARSET).unwrap();
 
     HttpResponse::Ok().body(response)
 
@@ -80,7 +114,7 @@ pub async fn decode_base64_charset(web::Path((charset,)): web::Path<(String,)>, 
 #[post("/decode_mime_header")]
 pub async fn decode_mime_header(req_body: String) -> impl Responder {
 
-    let normalized_req_body = utils::normalize_mime(&req_body);
+    let normalized_req_body = utils::normalize_str(&req_body);
     
     // let response: String = normalized_req_body.lines()
     //     .map(|x| {
@@ -92,29 +126,7 @@ pub async fn decode_mime_header(req_body: String) -> impl Responder {
     //     .map(|x| utils::attempt_decode(&x, &DEFAULT_ENCODING).unwrap())
     //     .collect();
         
-    let mut response = String::new();
-
-    for line in normalized_req_body.lines() {
- 
-        let trimmed_line = line.trim_start();
-
-        if trimmed_line.starts_with("=?") && trimmed_line.ends_with("?=") {
-
-            let prefixed_line = format!(":{}", trimmed_line);
-            let (parsed, _) = parse_header(prefixed_line.as_bytes()).unwrap();
-            response.push_str(&parsed.get_value())
-
-        } else {
-            
-            if trimmed_line.contains("\\x") || trimmed_line.contains("\\u") {
-                let unescaped_line_bytes = utils::unescape_as_bytes(&trimmed_line).expect("Unable to unescape request's body.");
-                let unescaped_line = utils::attempt_decode(&unescaped_line_bytes, &DEFAULT_ENCODING).unwrap();
-                response.push_str(&unescaped_line)
-            } else { 
-                response.push_str(&trimmed_line)
-            }
-        }
-    }
+    let response = utils::decode_mime_header(&normalized_req_body);
 
     HttpResponse::Ok().body(response)
 
@@ -128,6 +140,25 @@ pub async fn decode_mime_header_rfc822(req_body: web::Bytes) -> impl Responder {
     HttpResponse::Ok().body(parsed.get_value())
 
 }
+
+#[post("/decode_auto")]
+pub async fn decode_auto(req_body: String) -> impl Responder {
+
+    let response = utils::auto_decode(req_body, DEFAULT_CHARSET);
+
+    HttpResponse::Ok().body(response)
+
+}
+
+#[post("/decode_auto/{charset}")]
+pub async fn decode_auto_charset(web::Path((charset,)): web::Path<(String,)>, req_body: String) -> impl Responder {
+
+    let response = utils::auto_decode(req_body, &charset);
+
+    HttpResponse::Ok().body(response)
+
+}
+
 
 #[post("/regex_capture_group")]
 pub async fn regex_capture_group(request: web::Json<RegexData>) -> impl Responder { 

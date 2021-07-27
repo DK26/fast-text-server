@@ -6,6 +6,7 @@ use std::char;
 use base64::DecodeError;
 use quoted_printable::QuotedPrintableError;
 use regex::Regex;
+use crate::DEFAULT_CHARSET;
 
 // use std::string::FromUtf8Error;
 use encoding::{
@@ -396,21 +397,86 @@ pub fn attempt_decode(src: &[u8], encoding: &str) -> DecodingResult {
 
 }
 
-pub fn normalize_mime(mime: &str) -> String {
+pub fn normalize_str(string: &str) -> String {
 
-    let mime = mime
+    let normalized_string = string
                         .replace(r"\\", "\\")
                         .replace(r"\n","\n")
                         .replace(r"\r","\r")
                         .replace(r"\t","\t")
                         .replace(r"\=", "=")
-                        .replace(" =?", "\r\n=?")
-                        .replace("?= ", "?=\r\n");
-    mime
+                        .replace(" =?", " \r\n=?")
+                        .replace("?= ", "?=\r\n ");
+
+    normalized_string
+
 }
 
+pub fn decode_mime_header(src: &str) -> String {
 
-// Sketch
+    let mut result = String::new();
+
+    for line in src.lines() {
+ 
+        let trimmed_line = line.trim_start();
+
+        if trimmed_line.starts_with("=?") && trimmed_line.ends_with("?=") {
+
+            let prefixed_line = format!(":{}", trimmed_line);
+            let (parsed, _) = mailparse::parse_header(prefixed_line.as_bytes()).unwrap();
+
+            result.push_str(&parsed.get_value())
+
+        } else {
+
+            if trimmed_line.contains("\\x") || trimmed_line.contains("\\u") {
+
+                let unescaped_line_bytes = unescape_as_bytes(&trimmed_line).unwrap();
+                let unescaped_line = attempt_decode(&unescaped_line_bytes, &DEFAULT_CHARSET).unwrap();
+
+                result.push_str(&unescaped_line)
+
+            } else { result.push_str(&trimmed_line) }
+
+        }
+
+    }
+
+    result
+
+}
+
+pub fn decode_quoted_printable(src: String, charset: &str) -> String {
+    match quoted_printable::decode(&src, quoted_printable::ParseMode::Robust) {
+        Ok(v) => {
+            attempt_decode(&v, &charset).unwrap()
+        },
+        Err(_) => {
+            src
+        }
+    }
+}
+
+pub fn auto_decode(src: String, charset: &str) -> String {
+
+    let src_normalized = normalize_str(&src);
+
+    let src_normalized_upper = src_normalized.to_uppercase();
+
+    if src_normalized_upper.contains("?Q?") || src_normalized_upper.contains("?B?") {
+
+        decode_mime_header(&src_normalized)
+
+    } else if src_normalized.contains("\\x") || src_normalized.contains("\\u") {
+
+        let unescaped_bytes = unescape_as_bytes(&src_normalized).unwrap();
+
+        attempt_decode(&unescaped_bytes, charset).unwrap()
+
+    } else {
+        decode_quoted_printable(src, charset)
+    }
+}
 
 enum MimeEncoding {
     Base64Encoding,

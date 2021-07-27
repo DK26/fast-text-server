@@ -148,7 +148,7 @@ lazy_static! {
 
 }
 
-pub const DEFAULT_ENCODING : &'static str = "utf-8";
+pub const DEFAULT_CHARSET : &'static str = "utf-8";
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -184,11 +184,15 @@ async fn main() -> std::io::Result<()> {
             .service(services::unescape)
             // .service(services::form_test)
             // .service(services::json_test)
-            .service(services::unescape_decode)
+            .service(services::unescape_charset)
             .service(services::decode_base64)
             .service(services::decode_base64_charset)
             .service(services::decode_mime_header)
             .service(services::decode_mime_header_rfc822)
+            .service(services::decode_quoted_printable)
+            .service(services::decode_quoted_printable_charset)
+            .service(services::decode_auto)
+            .service(services::decode_auto_charset)
             .service(services::regex_capture_group)
     })
     .server_hostname(&CFG.service.server_hostname)
