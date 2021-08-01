@@ -99,139 +99,140 @@ pub fn decode_bytes(src: &[u8], encoding: &str, trap: DecoderTrap) -> DecodingRe
 
     let result: String = match encoding.as_str() {
         "utf8" | "utf-8" => { src.as_utf8()? },
-        "iso-8859-1" => {
+        "iso-8859-1" | "iso88591" | "iso-ir-100" | "isoir100" | "csisolatin1" 
+        | "latin1" | "latin-1" | "l1" | "ibm819" | "ibm-819" | "cp819" | "cp-819" => {
             all::ISO_8859_1.decode_to(src, trap, &mut src_decoded)?;
             src_decoded
         },
-        "iso-8859-2" => {
+        "iso-8859-2" | "iso88592" => {
             all::ISO_8859_2.decode_to(src, trap, &mut src_decoded)?;
             src_decoded    
         },
-        "iso-8859-3" => {
+        "iso-8859-3" | "iso88593" => {
             all::ISO_8859_3.decode_to(src, trap, &mut src_decoded)?;
             src_decoded
         },
-        "iso-8859-4" => {
+        "iso-8859-4" | "iso88594"=> {
             all::ISO_8859_4.decode_to(src, trap, &mut src_decoded)?;
             src_decoded
         },
-        "iso-8859-5" => {
+        "iso-8859-5" | "iso88595" => {
             all::ISO_8859_5.decode_to(src, trap, &mut src_decoded)?;
             src_decoded
         },
-        "iso-8859-6" => {
+        "iso-8859-6" | "iso88596" => {
             all::ISO_8859_6.decode_to(src, trap, &mut src_decoded)?;
             src_decoded
         },
-         "iso-8859-7" => {
+         "iso-8859-7" | "iso88597" => {
             all::ISO_8859_7.decode_to(src, trap, &mut src_decoded)?;
             src_decoded
         },
-         "iso-8859-8" => { 
+         "iso-8859-8" | "iso88598" => { 
             all::ISO_8859_8.decode_to(src, trap, &mut src_decoded)?;
             src_decoded
         },
-         "iso-8859-8-i" => {
+         "iso-8859-8-i" | "iso88598i"=> {
             all::ISO_8859_8.decode_to(src, trap, &mut src_decoded)?;
             src_decoded
         },
-        "iso-8859-10" => {
+        "iso-8859-10" | "iso885910" => {
             all::ISO_8859_10.decode_to(src, trap, &mut src_decoded)?;
             src_decoded
         },
-        "iso-8859-13" => {
+        "iso-8859-13" | "iso885913" => {
             all::ISO_8859_13.decode_to(src, trap, &mut src_decoded)?;
             src_decoded
         },
-        "iso-8859-14" => {
+        "iso-8859-14" | "iso885914" => {
             all::ISO_8859_14.decode_to(src, trap, &mut src_decoded)?;
             src_decoded
         },
-        "iso-8859-15" => {
+        "iso-8859-15" | "iso885915" => {
             all::ISO_8859_15.decode_to(src, trap, &mut src_decoded)?;
             src_decoded
         },
-        "iso-8859-16" => {
+        "iso-8859-16" | "iso885916" => {
             all::ISO_8859_16.decode_to(src, trap, &mut src_decoded)?;
             src_decoded
         },
-        "ibm866" => {
+        "ibm-866" | "ibm866" | "cp866" | "cp-866" | "866" => {
             all::IBM866.decode_to(src, trap, &mut src_decoded)?;
             src_decoded
         },
-        "koi8-r" => {
+        "koi8-r" | "koi8r" => {
             all::KOI8_R.decode_to(src, trap, &mut src_decoded)?;
             src_decoded
         },
-        "koi8-u" => {
+        "koi8-u" | "koi8u" => {
             all::ISO_8859_8.decode_to(src, trap, &mut src_decoded)?;
             src_decoded
         },
-        "macintosh" | "mac-roman" => {
+        "macintosh" | "mac-roman" | "macroman" => {
             all::MAC_ROMAN.decode_to(src, trap, &mut src_decoded)?;
             src_decoded
         },
-        "windows-874" => {
+        "windows-874" | "windows874" | "cp1162" | "cp-1162" | "ibm-1162" | "ibm1162" => {
             all::WINDOWS_874.decode_to(src, trap, &mut src_decoded)?;
             src_decoded  
         },
-        "windows-1250" => {
+        "windows-1250" | "windows1250" | "cp1250" | "cp-1250" => {
             all::WINDOWS_1250.decode_to(src, trap, &mut src_decoded)?;
             src_decoded  
         },
-        "windows-1251" => {
+        "windows-1251" | "windows1251" | "cp1251" | "cp-1251" => {
             all::WINDOWS_1251.decode_to(src, trap, &mut src_decoded)?;
             src_decoded  
         },
-        "windows-1252" => {
+        "windows-1252" | "windows1252" | "cp1252" | "cp-1252" => {
             all::WINDOWS_1252.decode_to(src, trap, &mut src_decoded)?;
             src_decoded  
         },
-        "windows-1253" => {
+        "windows-1253" | "windows1253" | "cp1253" | "cp-1253" => {
             all::WINDOWS_1253.decode_to(src, trap, &mut src_decoded)?;
             src_decoded  
         },
-        "windows-1254" => {
+        "windows-1254" | "windows1254" | "cp1254" | "cp-1254" => {
             all::WINDOWS_1254.decode_to(src, trap, &mut src_decoded)?;
             src_decoded  
         },
-        "windows-1255" => {
+        "windows-1255" | "windows1255" | "cp1255" | "cp-1255" | "ibm-1255" | "ibm1255" => {
             all::WINDOWS_1255.decode_to(src, trap, &mut src_decoded)?;
             src_decoded  
         },
-        "windows-1256" => {
+        "windows-1256" | "windows1256" | "cp1256" | "cp-1256" => {
             all::WINDOWS_1256.decode_to(src, trap, &mut src_decoded)?;
             src_decoded 
         },
-        "windows-1257" => {
+        "windows-1257" | "windows1257" | "cp1257" | "cp-1257" | "ibm922" | "ibm-922" => {
             all::WINDOWS_1257.decode_to(src, trap, &mut src_decoded)?;
             src_decoded 
         },
-        "windows-1258" => {
+        "windows-1258" | "windows1258" | "cp1258" | "cp-1258" => {
             all::WINDOWS_1258.decode_to(src, trap, &mut src_decoded)?;
             src_decoded 
         },
-        "mac-cyrillic" | "x-mac-cyrillic" => {
+        "mac-cyrillic" | "x-mac-cyrillic" | "maccyrillic" | "xmaccyrillic" => {
             all::MAC_CYRILLIC.decode_to(src, trap, &mut src_decoded)?;
             src_decoded
         },
-        "ascii" | "us-ascii"=> {
+        "ascii" | "us-ascii" | "usascii" => {
             all::ASCII.decode_to(src, trap, &mut src_decoded)?;
             src_decoded
         },
-        "big5-2003" => {
+        "big5-2003" | "big52003" => {
             all::BIG5_2003.decode_to(src, trap, &mut src_decoded)?;
             src_decoded
         },
-        "euc-jp" => {
+        "euc-jp" | "eucjp" => {
             all::EUC_JP.decode_to(src, trap, &mut src_decoded)?;
             src_decoded
         },
-        "gb18030" => {
+        "gb-18030" | "gb18030" => {
             all::GB18030.decode_to(src, trap, &mut src_decoded)?;
             src_decoded
         },
-        "gbk" => {
+        "windows-936" | "windows936" | "gbk" | "cp936" | "cp-936" => {
             all::GBK.decode_to(src, trap, &mut src_decoded)?;
             src_decoded
         },
@@ -239,23 +240,23 @@ pub fn decode_bytes(src: &[u8], encoding: &str, trap: DecoderTrap) -> DecodingRe
             all::HZ.decode_to(src, trap, &mut src_decoded)?;
             src_decoded
         },
-        "iso-2022_jp" => {
+        "iso-2022-jp" | "iso2022jp" => {
             all::ISO_2022_JP.decode_to(src, trap, &mut src_decoded)?;
             src_decoded
         },
-        "uft-16be" => {
+        "uft-16be" | "uft16be" => {
             all::UTF_16BE.decode_to(src, trap, &mut src_decoded)?;
             src_decoded
         },
-        "uft-16le" => {
+        "uft-16le" | "uft16le" => {
             all::UTF_16LE.decode_to(src, trap, &mut src_decoded)?;
             src_decoded
         },
-        "windows-31j" => {
+        "windows-31j" | "windows31j" | "cp943c" | "cp-943c" | "windows932" | "windows-932" | "cp932" | "cp-932"=> {
             all::WINDOWS_31J.decode_to(src, trap, &mut src_decoded)?;
             src_decoded
         },
-        "windows-949" => {
+        "windows-949" | "windows949" | "ms949" | "ms-949" | "cp949" | "cp-949" | "ibm-1363" | "ibm1363" => {
             all::WINDOWS_949.decode_to(src, trap, &mut src_decoded)?;
             src_decoded
         }
