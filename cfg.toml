@@ -12,7 +12,7 @@ listen = "127.0.0.1:8080"
 server_hostname = "localhost"
 
 # Sets the N number of workers. (Default: Not defined.
-# Automatically assigend the number of logical CPU's)
+# Automatically assigned the number of logical CPU's)
 # workers = 8
 
 # Sets the maximum N number of pending connections 
