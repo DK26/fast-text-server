@@ -1,65 +1,65 @@
-[service] 
 # Service related configurations for 
 # the underlying Actix-Web server.
+[service] 
 
-# Sets the listening interface for 
-# incoming HTTP connections. (Default: 127.0.0.1:8080)
-listen = "127.0.0.1:8080"
+    # Sets the listening interface for 
+    # incoming HTTP connections. (Default: 127.0.0.1:8080)
+    listen = "127.0.0.1:8080"
 
-# Sets the server hostname. Used by the
-# application router as a hostname for
-# url generation. (Default: localhost:8080)
-server_hostname = "localhost"
+    # Sets the server hostname. Used by the
+    # application router as a hostname for
+    # url generation. (Default: localhost:8080)
+    server_hostname = "localhost"
 
-# Sets the N number of workers. (Default: Not defined.
-# Automatically assigned the number of logical CPU's)
-# workers = 8
+    # Sets the N number of workers. (Default: Not defined.
+    # Automatically assigned the number of logical CPU's)
+    # workers = 8
 
-# Sets the maximum N number of pending connections 
-# that can be waiting to be served. (Default: 2048)
-backlog = 2048
+    # Sets the maximum N number of pending connections 
+    # that can be waiting to be served. (Default: 2048)
+    backlog = 2048
 
-# Sets the maximum per-worker number of N concurrent 
-# connections. (Default: 25000)
-max_connections = 25_000
+    # Sets the maximum per-worker number of N concurrent 
+    # connections. (Default: 25000)
+    max_connections = 25_000
 
-# Sets the maximum N per-worker concurrent connection 
-# establish process. (Default: 256)
-max_connection_rate = 256
+    # Sets the maximum N per-worker concurrent connection 
+    # establish process. (Default: 256)
+    max_connection_rate = 256
 
-# Sets server keep-alive setting in N seconds. (Default: 5)
-keep_alive = 5
+    # Sets server keep-alive setting in N seconds. (Default: 5)
+    keep_alive = 5
 
-# Sets server client timeout in N milliseconds for
-# the first request. To disable timeout set value to 0. 
-# (Default: 5000)
-client_timout = 5000
+    # Sets server client timeout in N milliseconds for
+    # the first request. To disable timeout set value to 0. 
+    # (Default: 5000)
+    client_timout = 5000
 
-# Sets server connection shutdown timeout in N milliseconds. 
-# To disable timeout set value to 0. (Default: 5000)
-client_shutdown = 5000
+    # Sets server connection shutdown timeout in N milliseconds. 
+    # To disable timeout set value to 0. (Default: 5000)
+    client_shutdown = 5000
 
-# Sets the timeout for graceful workers shutdown in N seconds. 
-# (Default: 30)
-shutdown_timeout = 30
+    # Sets the timeout for graceful workers shutdown in N seconds. 
+    # (Default: 30)
+    shutdown_timeout = 30
 
 
-[common]
 # Commonly shared configurations by all functionalities.
+[common]
 
-# Sets the alternative encoding for decoding, in case decoding
-# with the default UTF-8 fails. (Default: UTF-8)
-# If decoding to UTF-8 fails, this one is attempted instead.
-alt_encoding = "utf-8" 
+    # Sets the alternative encoding for decoding, in case decoding
+    # with the default UTF-8 fails. (Default: UTF-8)
+    # If decoding to UTF-8 fails, this one is attempted instead.
+    alt_encoding = "utf-8" 
 
 
-[cache]
 # Any cache related configurations.
+[cache]
 
-# Sets the in-memory cached patterns limit. Clears cache after
-# threshold. (Default: 10000)
-regex_patterns_limit = 10_000
+    # Sets the in-memory cached patterns limit. Clears cache after
+    # threshold. (Default: 10000)
+    regex_patterns_limit = 10_000
 
-# Sets the initial amount of N capacity for cached patterns.
-# (Default: 10000)
-regex_patterns_capacity = 10_000
+    # Sets the initial amount of N capacity for cached patterns.
+    # (Default: 10000)
+    regex_patterns_capacity = 10_000
