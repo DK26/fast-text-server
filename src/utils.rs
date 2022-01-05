@@ -81,7 +81,7 @@ impl AsUTF8 for &[u8] {
 
 impl Reverse for str {
     fn reverse(&self) -> String {
-        reverse_str(&self)
+        reverse_str(self)
     }
 }
 
@@ -297,6 +297,7 @@ pub fn unescape(s: &str) -> Option<String> {
     Some(s)
 }
 
+#[allow(clippy::char_lit_as_u8)]
 pub fn unescape_as_bytes(s: &str) -> Option<Vec<u8>> {
     let mut queue : VecDeque<_> = String::from(s).chars().collect();
     let mut s = Vec::new();
@@ -387,7 +388,7 @@ fn unescape_octal_no_leading(c: char, queue: &mut VecDeque<char>) -> Option<char
 /// If that fails, return a lossy UTF-8.
 pub fn attempt_decode(src: &[u8], encoding: &str) -> DecodingResult {
 
-    Ok(match decode_bytes(src, &encoding, DEFAULT_DECODER_TRAP) {
+    Ok(match decode_bytes(src, encoding, DEFAULT_DECODER_TRAP) {
         Ok(result) => result,
         // Err(_) => match decode_bytes(src, &CFG.common.alt_encoding, DEFAULT_DECODER_TRAP) {
         Err(_) => match decode_bytes(src, &CFG.common.alt_encoding, DEFAULT_DECODER_TRAP) {
@@ -400,16 +401,14 @@ pub fn attempt_decode(src: &[u8], encoding: &str) -> DecodingResult {
 
 pub fn normalize_str(string: &str) -> String {
 
-    let normalized_string = string
-                        .replace(r"\\", "\\")
-                        .replace(r"\n","\n")
-                        .replace(r"\r","\r")
-                        .replace(r"\t","\t")
-                        .replace(r"\=", "=")
-                        .replace(" =?", " \r\n=?")
-                        .replace("?= ", "?=\r\n ");
-
-    normalized_string
+    string
+        .replace(r"\\", "\\")
+        .replace(r"\n","\n")
+        .replace(r"\r","\r")
+        .replace(r"\t","\t")
+        .replace(r"\=", "=")
+        .replace(" =?", " \r\n=?")
+        .replace("?= ", "?=\r\n ")
 
 }
 
@@ -450,7 +449,7 @@ pub fn decode_mime_header(src: &str) -> String {
 pub fn decode_quoted_printable(src: String, charset: &str) -> String {
     match quoted_printable::decode(&src, quoted_printable::ParseMode::Robust) {
         Ok(v) => {
-            attempt_decode(&v, &charset).unwrap()
+            attempt_decode(&v, charset).unwrap()
         },
         Err(_) => {
             src
@@ -684,7 +683,7 @@ pub fn manual_decode_mime_subject(src: &str) -> Result<UTF8String, ParsingError>
         }
     }
     
-    let payload = match attempt_decode(&decoded_payload, &current_charset_range.view(&src)) {
+    let payload = match attempt_decode(&decoded_payload, current_charset_range.view(src)) {
         Ok(p) => p,
         Err(e) => return Err(ParsingError::DecodingCharsetError(e)),
     };
@@ -738,7 +737,7 @@ impl<'a> PatternsCache {
    
         let result = self.map.entry(pattern.to_owned()).or_insert_with(|| {
             current_size += 1; 
-            Regex::new(&pattern).unwrap()
+            Regex::new(pattern).unwrap()
         });
 
         self.size = current_size;

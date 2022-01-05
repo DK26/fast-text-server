@@ -148,7 +148,7 @@ lazy_static! {
 
 }
 
-pub const DEFAULT_CHARSET : &'static str = "utf-8";
+pub const DEFAULT_CHARSET : &str = "utf-8";
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {

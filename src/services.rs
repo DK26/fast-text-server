@@ -38,7 +38,7 @@ pub async fn unescape(req_body: String) -> impl Responder {
 
     let unescaped_req_body = utils::unescape_as_bytes(&req_body).expect("Unable to unescape request's body.");
 
-    let response = utils::attempt_decode(&unescaped_req_body, &DEFAULT_CHARSET).unwrap();
+    let response = utils::attempt_decode(&unescaped_req_body, DEFAULT_CHARSET).unwrap();
 
     HttpResponse::Ok().body(response)
 
@@ -67,7 +67,7 @@ pub async fn decode_quoted_printable(req_body: String) -> impl Responder {
     //     }
     // };
 
-    let response = utils::decode_quoted_printable(req_body,&DEFAULT_CHARSET);
+    let response = utils::decode_quoted_printable(req_body, DEFAULT_CHARSET);
 
     HttpResponse::Ok().body(response)
 
@@ -94,7 +94,7 @@ pub async fn decode_base64(req_body: String) -> impl Responder {
 
     let raw_payload = base64::decode(&req_body).expect("Unable to decode base64.");
 
-    let response = utils::attempt_decode(&raw_payload, &DEFAULT_CHARSET).unwrap();
+    let response = utils::attempt_decode(&raw_payload, DEFAULT_CHARSET).unwrap();
 
     HttpResponse::Ok().body(response)
 

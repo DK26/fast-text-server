@@ -4,15 +4,30 @@ use std::path::Path;
 use std::str::FromStr;
 use std::{
     fs::File, 
-    io::Read
+    io::Read,
 };
 use std::env::current_exe;
 
+#[derive(Debug)]
 enum CfgFileError {
     FailedToOpenCfgFile(std::io::Error),
     FailedToReadCfgFile(std::io::Error),
     FailedToParseCfgFile(toml::de::Error)
 }
+
+impl std::fmt::Display for CfgFileError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", *self)
+    }
+}
+
+impl std::error::Error for CfgFileError { }
+
+// impl From<std::io::Error> for CfgFileError {
+//     fn from(e: std::io::Error) -> Self {
+//         CfgFileError::UnknownFailure(e)
+//     }
+// }
 
 // enum OnParseError<T, F: Fn() -> T> {
 //     DefaultValue(T),
@@ -94,7 +109,7 @@ impl Config {
                 // Returns a `Config` object.
                 match toml::from_str(&toml_contents) {
                     Ok(r) => Ok(r),
-                    Err(e) =>  return Err(CfgFileError::FailedToParseCfgFile(e))
+                    Err(e) => Err(CfgFileError::FailedToParseCfgFile(e))
                 }
             }
             Err(e) => Err(CfgFileError::FailedToOpenCfgFile(e))
