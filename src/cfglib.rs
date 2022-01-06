@@ -8,6 +8,7 @@ use std::{
 };
 use std::env::current_exe;
 
+#[allow(clippy::enum_variant_names)]
 #[derive(Debug)]
 enum CfgFileError {
     FailedToOpenCfgFile(std::io::Error),
