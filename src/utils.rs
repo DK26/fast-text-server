@@ -518,9 +518,9 @@ impl<'a> ViewRange {
 
 #[derive(Debug)]
 pub enum ParsingError {
-    DecodingCharsetError(Cow<'static, str>),
-    DecodingBase64Error(DecodeError),
-    QDecodingError(QuotedPrintableError),
+    DecodingCharset(Cow<'static, str>),
+    DecodingBase64(DecodeError),
+    QDecoding(QuotedPrintableError),
     
 }
 
@@ -588,7 +588,7 @@ pub fn manual_decode_mime_subject(src: &str) -> Result<UTF8String, ParsingError>
                                 // log::debug!("Previous charset: {}", p.view(&src));
                                 let payload = match attempt_decode(&decoded_payload, &p.view(&src)) {
                                     Ok(p) => p,
-                                    Err(e) => return Err(ParsingError::DecodingCharsetError(e)),
+                                    Err(e) => return Err(ParsingError::DecodingCharset(e)),
                                 };
 
                                 decoded_payload.clear();
@@ -630,7 +630,7 @@ pub fn manual_decode_mime_subject(src: &str) -> Result<UTF8String, ParsingError>
                                 // log::debug!("Base64: {}", encoded_payload);
                                 let payload = match base64::decode(&encoded_payload) {
                                     Ok(p) => p,
-                                    Err(e) => return Err(ParsingError::DecodingBase64Error(e)),
+                                    Err(e) => return Err(ParsingError::DecodingBase64(e)),
                                 };
                                 
                                 encoded_payload.clear();
@@ -666,7 +666,7 @@ pub fn manual_decode_mime_subject(src: &str) -> Result<UTF8String, ParsingError>
                                 // log::debug!("Q-Encoding: {}", encoded_payload);
                                 let payload = match quoted_printable::decode(&encoded_payload, quoted_printable::ParseMode::Robust) {
                                     Ok(p) => p,
-                                    Err(e) => return Err(ParsingError::QDecodingError(e)),
+                                    Err(e) => return Err(ParsingError::QDecoding(e)),
                                 };
                                 
                                 encoded_payload.clear();
@@ -685,7 +685,7 @@ pub fn manual_decode_mime_subject(src: &str) -> Result<UTF8String, ParsingError>
     
     let payload = match attempt_decode(&decoded_payload, current_charset_range.view(src)) {
         Ok(p) => p,
-        Err(e) => return Err(ParsingError::DecodingCharsetError(e)),
+        Err(e) => return Err(ParsingError::DecodingCharset(e)),
     };
 
     final_result.push_str(&payload);
