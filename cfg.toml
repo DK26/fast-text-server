@@ -63,3 +63,9 @@
     # Sets the initial amount of N capacity for cached patterns.
     # (Default: 10000)
     regex_patterns_capacity = 10_000
+
+
+[logger]
+
+    # Available levels: "OFF", "ERROR", "WARN", "INFO", "DEBUG", "TRACE"
+    log_level = "info"

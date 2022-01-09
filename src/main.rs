@@ -125,6 +125,13 @@ fn arg_matches<'a>() -> ArgMatches<'a> {
                 .value_name("N")
                 .takes_value(true)
                 .help("Sets the initial amount of N capacity for cached patterns. (Default: 10000)")
+        ).arg(
+            Arg::with_name("log_level")
+                .short("g")
+                .long("log_level")
+                .value_name("LEVEL")
+                .takes_value(true)
+                .help(r#"Sets the log level for the logger. (Available levels: "OFF", "ERROR", "WARN", "INFO", "DEBUG", "TRACE")"#)
         )
     .get_matches()
 }
@@ -153,8 +160,17 @@ pub const DEFAULT_CHARSET : &str = "utf-8";
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
 
+    let log_level: log::LevelFilter =  match CFG.logger.log_level.parse() {
+        Ok(level) => level,
+        Err(e) => {
+            let default_log_level = cfglib::default_logger_level();
+            eprintln!("Error: {}\nSetting the log level to '{}'", e, default_log_level);
+            default_log_level.parse().unwrap()
+        }
+    };
+
     SimpleLogger::new()
-    .with_level(log::LevelFilter::Info)
+    .with_level(log_level)
     .init().unwrap();
 
     // Configurations
@@ -176,6 +192,9 @@ async fn main() -> std::io::Result<()> {
     // Cache
     log::debug!("regex_patterns_capacity = {}", CFG.cache.regex_patterns_capacity);
     log::debug!("regex_patterns_limit = {}", CFG.cache.regex_patterns_limit);
+
+    // Logger
+    log::debug!("log_level = {}", CFG.logger.log_level);
 
     HttpServer::new(|| {
         App::new()

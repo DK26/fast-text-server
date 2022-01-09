@@ -69,6 +69,9 @@ pub struct Config {
 
     #[serde(default = "default_cache_config")]
     pub cache: CacheConfig,
+
+    #[serde(default = "default_logger_config")]
+    pub logger: LoggerConfig,
 }
 
 impl Default for Config {
@@ -78,6 +81,7 @@ impl Default for Config {
             common: default_common_config(),
             service: default_service_config(),
             cache: default_cache_config(),
+            logger: default_logger_config(),
         }
     }
 
@@ -142,6 +146,10 @@ impl Config {
                 regex_patterns_capacity: parse_arg(&arg_matches, "regex_patterns_capacity", base.cache.regex_patterns_capacity),
             },
 
+            logger: LoggerConfig {
+                log_level: parse_arg(&arg_matches, "log_level", base.logger.log_level),
+            }
+
         }
     }
 }
@@ -149,6 +157,7 @@ impl Config {
 fn default_common_config() -> CommonConfig { CommonConfig::default() }
 fn default_service_config() -> ServiceConfig { ServiceConfig::default() }
 fn default_cache_config() -> CacheConfig { CacheConfig::default() }
+fn default_logger_config() -> LoggerConfig { LoggerConfig::default() }
 
 #[derive(Deserialize, Debug)]
 pub struct CommonConfig {
@@ -253,6 +262,21 @@ impl Default for CacheConfig {
 
 fn default_regex_patterns_limit() -> usize { 10000 }
 fn default_regex_patterns_capacity() -> usize { 10000 }
+
+#[derive(Deserialize, Debug)]
+pub struct LoggerConfig {
+
+    #[serde(default = "default_logger_level")]
+    pub log_level: String,
+}
+
+impl Default for LoggerConfig {
+    fn default() -> Self {
+        Self { log_level: default_logger_level() }
+    }
+}
+
+pub fn default_logger_level() -> String { String::from("info") }
 
 pub fn init_cfg(arg_matches: ArgMatches) -> Config {
 

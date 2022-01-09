@@ -431,12 +431,12 @@ pub fn decode_mime_header(src: &str) -> String {
 
             if trimmed_line.contains("\\x") || trimmed_line.contains("\\u") {
 
-                let unescaped_line_bytes = unescape_as_bytes(&trimmed_line).unwrap();
-                let unescaped_line = attempt_decode(&unescaped_line_bytes, &DEFAULT_CHARSET).unwrap();
+                let unescaped_line_bytes = unescape_as_bytes(trimmed_line).unwrap();
+                let unescaped_line = attempt_decode(&unescaped_line_bytes, DEFAULT_CHARSET).unwrap();
 
                 result.push_str(&unescaped_line)
 
-            } else { result.push_str(&trimmed_line) }
+            } else { result.push_str(trimmed_line) }
 
         }
 
@@ -583,10 +583,10 @@ pub fn manual_decode_mime_subject(src: &str) -> Result<UTF8String, ParsingError>
                         // Has the charset changed? If so, decode our current progress into the final result before proceeding.
                         if let Some(p) = prev_charset_range {
 
-                            if p.view(&src).to_uppercase() != current_charset_range.view(&src).to_uppercase() {
+                            if p.view(src).to_uppercase() != current_charset_range.view(src).to_uppercase() {
 
                                 // log::debug!("Previous charset: {}", p.view(&src));
-                                let payload = match attempt_decode(&decoded_payload, &p.view(&src)) {
+                                let payload = match attempt_decode(&decoded_payload, p.view(src)) {
                                     Ok(p) => p,
                                     Err(e) => return Err(ParsingError::DecodingCharset(e)),
                                 };
