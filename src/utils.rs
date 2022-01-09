@@ -701,7 +701,7 @@ pub struct PatternsCache {
 }
 
 #[allow(dead_code)]
-impl<'a> PatternsCache {
+impl<'cache> PatternsCache {
 
     pub fn new() -> Self {
         Self {
@@ -724,8 +724,10 @@ impl<'a> PatternsCache {
         self
     }
     
-    pub fn get<'b, 'c>(&'a mut self, pattern: &'c str) -> &'b Regex 
-    where 'a: 'b {
+    pub fn get<'compiled_pattern, 'string_pattern>(&'cache mut self, pattern: &'string_pattern str) -> &'compiled_pattern Regex 
+    // `'cache` lifetime outlives `'compiled_pattern` lifetime. Which means, `'cache` lasts at least as long as `'compiled_pattern`.
+    // That is because a compiled Regex can be dropped and replaced by another in some conditions.
+    where 'cache: 'compiled_pattern {
 
         let mut current_size = self.map.len();
         
