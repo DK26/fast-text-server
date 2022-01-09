@@ -160,7 +160,7 @@ pub const DEFAULT_CHARSET : &str = "utf-8";
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
 
-    let log_level: log::LevelFilter =  match CFG.logger.log_level.parse() {
+    let log_level =  match CFG.logger.log_level.parse() {
         Ok(level) => level,
         Err(e) => {
             let default_log_level = cfglib::default_logger_level();
