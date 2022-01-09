@@ -747,22 +747,27 @@ impl<'cache> PatternsCache {
         result
     }
 
+    #[inline]
     pub fn len(&self) -> usize {
         self.size
     }
 
+    #[inline]
     pub fn get_limit(&self) -> usize {
         self.limit
     }
 
+    #[inline]
     pub fn is_limited(&self) -> bool {
         self.limit > 0
     }
 
+    #[inline]
     pub fn reached_limit(&self) -> bool {
         self.size >= self.limit
     }
 
+    #[inline]
     pub fn clear(&mut self) {
 
         {
