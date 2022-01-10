@@ -64,6 +64,7 @@ pub trait AsUTF8Lossy {
 }
 
 impl AsUTF8Lossy for &[u8] {
+    #[inline]
     fn as_utf8_lossy(&self) -> UTF8String {
         to_utf8_lossy(self)
     }
@@ -74,18 +75,21 @@ pub trait AsUTF8 {
 }
 
 impl AsUTF8 for &[u8] {
+    #[inline]
     fn as_utf8(&self) -> DecodingResult {
         to_utf8(self)
     }
 }
 
 impl Reverse for str {
+    #[inline]
     fn reverse(&self) -> String {
         reverse_str(self)
     }
 }
 
 impl DecodeUTF8 for &[u8] {
+    #[inline]
     fn decode(&self, encoding: &str, trap: DecoderTrap) -> DecodingResult {
         decode_bytes(self, encoding, trap)
     }
@@ -399,6 +403,7 @@ pub fn attempt_decode(src: &[u8], encoding: &str) -> DecodingResult {
 
 }
 
+#[inline]
 pub fn normalize_str(string: &str) -> String {
 
     string
