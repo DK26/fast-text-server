@@ -160,6 +160,10 @@ lazy_static! {
         
         arg_matches.into()
 
+        // TODO: `let file_config: Config = Config::from(FilePath)`
+        // TODO: `let args_config: Config = Config::from(ArgMatches)`
+        // TODO: Return `file_config + args_config`
+
     };
 
     static ref PATTERNS_CACHE: RwLock<PatternsCache> = {
