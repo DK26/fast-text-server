@@ -228,6 +228,7 @@ async fn main() -> std::io::Result<()> {
             .service(services::decode_auto)
             .service(services::decode_auto_charset)
             .service(services::regex_capture_group)
+            .service(services::regex_to_json)
     })
     .server_hostname(&CFG.service.server_hostname)
     .workers(CFG.service.workers)

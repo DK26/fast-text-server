@@ -178,6 +178,26 @@ pub async fn regex_capture_group(request: web::Json<RegexData>) -> impl Responde
     HttpResponse::Ok().body(response)
 }
 
+#[post("/regex_to_json")]
+pub async fn regex_to_json(request: web::Json<RegexData>) -> impl Responder { 
+
+    // TODO: Return a JSON in the response with all Regex fields e.g. `(?P<year>\d+)` may return `{"year": 2022}`
+    
+    let mut patterns_cache = PATTERNS_CACHE.write();
+
+    let re = patterns_cache.get(&request.pattern);
+
+    let caps = re.captures(&request.text).unwrap();
+
+    let response = caps
+        .get(1)
+        .unwrap()
+        .as_str()
+        .to_owned();
+
+    HttpResponse::Ok().body(response)
+}
+
 // #[derive(Deserialize, Debug)]
 // pub struct TestData {
 //     payload: String,
