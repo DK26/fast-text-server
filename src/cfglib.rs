@@ -18,11 +18,29 @@ enum CfgFileError {
 
 impl std::fmt::Display for CfgFileError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", *self)
+        write!(f, "{self:?}")
     }
 }
 
 impl std::error::Error for CfgFileError { }
+
+#[derive(Debug)]
+enum ConfigError {
+    BadArgument(String),
+    FileError(CfgFileError)
+}
+
+impl std::fmt::Display for ConfigError {
+
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ConfigError::BadArgument(e) => write!(f, "{e}"),
+            ConfigError::FileError(inner) => write!(f, "{inner}"),
+        }
+    }
+}
+
+impl std::error::Error for ConfigError { }
 
 // impl From<std::io::Error> for CfgFileError {
 //     fn from(e: std::io::Error) -> Self {
@@ -40,22 +58,26 @@ impl std::error::Error for CfgFileError { }
 // fn parse_arg<T: FromStr>(arg_matches: ArgMatches, arg: &str, default: fn() -> T, on_error: OnParseError<T, fn() -> T>) -> T {
 // fn parse_arg<T: FromStr>(arg_matches: ArgMatches, arg: &str, default: fn() -> T) -> T {
 // fn parse_arg<T: FromStr>(arg_matches: ArgMatches, arg: &str, default: impl Fn() -> T) -> T {
-fn parse_arg<T: FromStr>(arg_matches: &ArgMatches, arg: &str, default: T) -> T {
-
+// fn parse_arg<T: FromStr>(arg_matches: &ArgMatches, arg: &str, default: T) -> T {
+fn parse_arg<T: FromStr>(arg_matches: &ArgMatches, arg: &str, default: impl FnOnce() -> T) -> Result<T, ConfigError> {
+    
     match arg_matches.value_of(arg) {
         Some(value) => match value.parse() {
-            Ok(parsed) => parsed,
-            // Err(_) => panic!("Unable to parse argument '{}'. Bad value '{}'", arg, value)
+            Ok(parsed) => Ok(parsed),
             Err(_) => {
-                log::error!("Failed to parse the '{}' argument. Incorrect value was given: '{}'", arg, value);
-                std::process::exit(1);
+                // log::error!("Failed to parse the '{arg}' argument. Incorrect value was given: '{value}'");
+                // std::process::exit(1);
+                return Err(
+                    ConfigError::BadArgument(format!("Failed to parse the '{arg}' argument. Incorrect value was given: '{value}'"))
+                )
             }
         }
         None => {
-            // default()
-            default
+            Ok(default())
+            // default
         }
     }
+    
 }
 
 #[derive(Deserialize, Debug)]
@@ -121,38 +143,41 @@ impl Config {
         }
     }
 
-    fn from_arg_matches(arg_matches: ArgMatches, base: Config) -> Self {
+    fn from_arg_matches(arg_matches: ArgMatches, base: Config) -> Result<Self, ConfigError> {
 
-        Self {
-            service : ServiceConfig {
-                listen: parse_arg(&arg_matches, "listen", base.service.listen),
-                server_hostname: parse_arg(&arg_matches, "server_hostname", base.service.server_hostname),
-                workers: parse_arg(&arg_matches, "workers", base.service.workers),
-                backlog: parse_arg(&arg_matches, "backlog", base.service.backlog),
-                max_connections: parse_arg(&arg_matches, "max_connections", base.service.max_connections),
-                max_connection_rate: parse_arg(&arg_matches, "max_connection_rate", base.service.max_connection_rate),
-                keep_alive: parse_arg(&arg_matches, "keep_alive", base.service.keep_alive),
-                client_timeout: parse_arg(&arg_matches, "client_timeout", base.service.client_timeout),
-                client_shutdown: parse_arg(&arg_matches, "client_shutdown", base.service.client_shutdown),
-                shutdown_timeout: parse_arg(&arg_matches, "shutdown_timeout", base.service.shutdown_timeout),
-            },
+        Ok(
+            Self {
+                service : ServiceConfig {
+                    listen: parse_arg(&arg_matches, "listen", || base.service.listen)?,
+                    server_hostname: parse_arg(&arg_matches, "server_hostname", || base.service.server_hostname)?,
+                    workers: parse_arg(&arg_matches, "workers", || base.service.workers)?,
+                    backlog: parse_arg(&arg_matches, "backlog", || base.service.backlog)?,
+                    max_connections: parse_arg(&arg_matches, "max_connections", || base.service.max_connections)?,
+                    max_connection_rate: parse_arg(&arg_matches, "max_connection_rate", || base.service.max_connection_rate)?,
+                    keep_alive: parse_arg(&arg_matches, "keep_alive", || base.service.keep_alive)?,
+                    client_timeout: parse_arg(&arg_matches, "client_timeout", || base.service.client_timeout)?,
+                    client_shutdown: parse_arg(&arg_matches, "client_shutdown", || base.service.client_shutdown)?,
+                    shutdown_timeout: parse_arg(&arg_matches, "shutdown_timeout", || base.service.shutdown_timeout)?,
+                },
 
-            common : CommonConfig {
-                alt_encoding: parse_arg(&arg_matches, "alt_encoding", base.common.alt_encoding),
-            },
+                common : CommonConfig {
+                    alt_encoding: parse_arg(&arg_matches, "alt_encoding", || base.common.alt_encoding)?,
+                },
 
-            cache: CacheConfig {
-                regex_patterns_limit: parse_arg(&arg_matches, "regex_patterns_limit", base.cache.regex_patterns_limit),
-                regex_patterns_capacity: parse_arg(&arg_matches, "regex_patterns_capacity", base.cache.regex_patterns_capacity),
-            },
+                cache: CacheConfig {
+                    regex_patterns_limit: parse_arg(&arg_matches, "regex_patterns_limit", || base.cache.regex_patterns_limit)?,
+                    regex_patterns_capacity: parse_arg(&arg_matches, "regex_patterns_capacity",|| base.cache.regex_patterns_capacity)?,
+                },
 
-            logger: LoggerConfig {
-                log_level: parse_arg(&arg_matches, "log_level", base.logger.log_level),
-            }
+                logger: LoggerConfig {
+                    log_level: parse_arg(&arg_matches, "log_level", || base.logger.log_level)?,
+                }
+            } // Self
+        ) // Ok()
 
-        }
-    }
-}
+    } // fn
+
+} // impl
 
 fn default_common_config() -> CommonConfig { CommonConfig::default() }
 fn default_service_config() -> ServiceConfig { ServiceConfig::default() }
@@ -175,7 +200,7 @@ impl Default for CommonConfig {
     }
 }
 
-fn default_common_alt_encoding() -> String { String::from("utf-8") }
+fn default_common_alt_encoding() -> String { "utf-8".into() }
 
 #[derive(Deserialize, Debug)]
 pub struct ServiceConfig {
@@ -229,8 +254,8 @@ impl Default for ServiceConfig {
     }
 }
 
-fn default_service_listen() -> String { String::from("127.0.0.1:8080") }
-fn default_service_server_hostname() -> String { String::from("localhost") }
+fn default_service_listen() -> String { "127.0.0.1:8080".into() }
+fn default_service_server_hostname() -> String { "localhost".into() }
 fn default_service_workers() -> usize { num_cpus::get() }
 fn default_service_backlog() -> i32 { 2048 }
 fn default_service_max_connections() -> usize { 25_000 }
@@ -276,7 +301,7 @@ impl Default for LoggerConfig {
     }
 }
 
-pub fn default_logger_level() -> String { String::from("info") }
+pub fn default_logger_level() -> String { "info".into() }
 
 pub fn init_cfg(arg_matches: ArgMatches) -> Config {
 
@@ -289,22 +314,26 @@ pub fn init_cfg(arg_matches: ArgMatches) -> Config {
         Err(cfg_file_error) => match cfg_file_error {
 
             CfgFileError::FailedToOpenCfgFile(e) =>  {
-                log::warn!("Unable to load '{}' file: {}", cfg_file_path, e);
+                log::warn!("Unable to load '{cfg_file_path}' file: {e}");
                 Config::default()
             },
 
             CfgFileError::FailedToReadCfgFile(e) => {
-                log::error!("Unable to load '{}' contents: {}", cfg_file_path, e);
+                log::error!("Unable to load '{cfg_file_path}' contents: {e}");
                 std::process::exit(1);
             },
 
             CfgFileError::FailedToParseCfgFile(e) => {
-                log::error!("Failed to parse '{}': {}", cfg_file_path, e);
+                log::error!("Failed to parse '{cfg_file_path}': {e}");
                 std::process::exit(1);
             },
         }
     };
 
     Config::from_arg_matches(arg_matches, cfg_file)
+        .unwrap_or_else(|e| {
+            log::error!("{e}");
+            std::process::exit(1)
+        })
  
 }

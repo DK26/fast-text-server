@@ -16,118 +16,122 @@ use actix_web::{
 use simple_logger::SimpleLogger;
 use clap::{ArgMatches, Arg};
 
-fn arg_matches<'a>() -> ArgMatches<'a> {
+fn arg_matches() -> ArgMatches {
 
-    let about = format!("Fast, lightweight RESTful API services for processing, parsing & modifying UTF-8 text messages.
-    \nAuthor: {}\nSource: https://github.com/DK26/fast-webhooks", env!("CARGO_PKG_AUTHORS"));
+    let about = format!("{description}
+    \nAuthor: {author}\nSource: {source}", 
+        description = "Fast, lightweight RESTful API services for processing, parsing & modifying UTF-8 text messages.",
+        author = env!("CARGO_PKG_AUTHORS"),
+        source = "https://github.com/DK26/fast-webhooks",
+    );
  
     clap::App::new(env!("CARGO_PKG_NAME"))
         .version(env!("CARGO_PKG_VERSION"))
         .about(about.as_str())
         .arg(
-            Arg::with_name("listen")
-                .short("l")
+            Arg::new("listen")
+                .short('l')
                 .long("listen")
                 .value_name("INTERFACE IP:PORT")
                 .takes_value(true)
                 .help("Sets the listening interface for incoming HTTP connections. (Default: 127.0.0.1:8080)")
         )
         .arg(
-            Arg::with_name("server_hostname")
-                .short("n")
+            Arg::new("server_hostname")
+                .short('n')
                 .long("server_hostname")
                 .value_name("HOSTNAME:PORT")
                 .takes_value(true)
                 .help("Sets the server hostname. Used by the application router as a hostname for url generation. (Default: localhost:8080)")
         )
         .arg(
-            Arg::with_name("workers")
-                .short("w")
+            Arg::new("workers")
+                .short('w')
                 .long("workers")
                 .value_name("N")
                 .takes_value(true)
                 .help("Sets the N number of workers. (Default: Logical CPUs count)")
         )
         .arg(
-            Arg::with_name("backlog")
-                .short("b")
+            Arg::new("backlog")
+                .short('b')
                 .long("backlog")
                 .value_name("N")
                 .takes_value(true)
                 .help("Sets the maximum N number of pending connections that can be waiting to be served. (Default: 2048)")
         )
         .arg(
-            Arg::with_name("max_connections")
-                .short("c")
+            Arg::new("max_connections")
+                .short('c')
                 .long("max_connections")
                 .value_name("N")
                 .takes_value(true)
                 .help("Sets the maximum per-worker number of N concurrent connections. (Default: 25000)")
         )
         .arg(
-            Arg::with_name("max_connection_rate")
-                .short("r")
+            Arg::new("max_connection_rate")
+                .short('r')
                 .long("max_connection_rate")
                 .value_name("N")
                 .takes_value(true)
                 .help("Sets the maximum N per-worker concurrent connection establish process. (Default: 256)")
         )
         .arg(
-            Arg::with_name("keep_alive")
-                .short("k")
+            Arg::new("keep_alive")
+                .short('k')
                 .long("keep_alive")
                 .value_name("N")
                 .takes_value(true)
                 .help("Sets server keep-alive setting in N seconds. (Default: 5)")
         )
         .arg(
-            Arg::with_name("client_timeout")
-                .short("t")
+            Arg::new("client_timeout")
+                .short('t')
                 .long("client_timeout")
                 .value_name("N")
                 .takes_value(true)
                 .help("Sets server client timeout in N milliseconds for the first request. To disable timeout set value to 0. (Default: 5000)")
         )
         .arg(
-            Arg::with_name("client_shutdown")
-                .short("s")
+            Arg::new("client_shutdown")
+                .short('s')
                 .long("client_shutdown")
                 .value_name("N")
                 .takes_value(true)
                 .help("Sets server connection shutdown timeout in N milliseconds. To disable timeout set value to 0. (Default: 5000)")
         )
         .arg(
-            Arg::with_name("shutdown_timeout")
-                .short("d")
+            Arg::new("shutdown_timeout")
+                .short('d')
                 .long("shutdown_timeout")
                 .value_name("N")
                 .takes_value(true)
                 .help("Sets the timeout for graceful workers shutdown in N seconds. (Default: 30)")
         )
         .arg(
-            Arg::with_name("alt_encoding")
-                .short("a")
+            Arg::new("alt_encoding")
+                .short('a')
                 .long("alt_encoding")
                 .value_name("ENCODING")
                 .takes_value(true)
                 .help("Sets the alternative encoding for decoding, in case decoding with the default UTF-8 fails. (Default: UTF-8)")
         )
         .arg(
-            Arg::with_name("regex_patterns_limit")
+            Arg::new("regex_patterns_limit")
                 .long("regex_patterns_limit")
                 .value_name("N")
                 .takes_value(true)
                 .help("Sets the in-memory cached patterns limit. Clears cache after threshold. (Default: 10000)")
         )
         .arg(
-            Arg::with_name("regex_patterns_capacity")
+            Arg::new("regex_patterns_capacity")
                 .long("regex_patterns_capacity")
                 .value_name("N")
                 .takes_value(true)
                 .help("Sets the initial amount of N capacity for cached patterns. (Default: 10000)")
         ).arg(
-            Arg::with_name("log_level")
-                .short("g")
+            Arg::new("log_level")
+                .short('g')
                 .long("log_level")
                 .value_name("LEVEL")
                 .takes_value(true)
@@ -164,7 +168,7 @@ async fn main() -> std::io::Result<()> {
         Ok(level) => level,
         Err(e) => {
             let default_log_level = cfglib::default_logger_level();
-            eprintln!("Error: {}\nSetting the log level to '{}'", e, default_log_level);
+            eprintln!("Error: {e}\nSetting the log level to '{default_log_level}'");
             default_log_level.parse().unwrap()
         }
     };

@@ -118,7 +118,7 @@ pub async fn decode_mime_header(req_body: String) -> impl Responder {
     
     // let response: String = normalized_req_body.lines()
     //     .map(|x| {
-    //         let prefixed_x = format!(":{}", x);
+    //         let prefixed_x = format!(":{x}");
     //         let (parsed, _) = parse_header(prefixed_x.as_bytes()).unwrap();
     //         parsed.get_value()
     //     })
@@ -186,10 +186,10 @@ pub async fn regex_capture_group(request: web::Json<RegexData>) -> impl Responde
 
 // #[post("/form_test")]
 // pub async fn form_test(request: web::Form<TestData>) -> impl Responder { 
-//     format!("{:?}", &request)
+//     format!("{request:?}")
 // }
 
 // #[post("/json_test")]
 // pub async fn json_test(request: web::Json<TestData>) -> impl Responder { 
-//     format!("{:?}", &request)
+//     format!("{request:?}")
 // }

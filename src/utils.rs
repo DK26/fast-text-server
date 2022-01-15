@@ -427,7 +427,7 @@ pub fn decode_mime_header(src: &str) -> String {
 
         if trimmed_line.starts_with("=?") && trimmed_line.ends_with("?=") {
 
-            let prefixed_line = format!(":{}", trimmed_line);
+            let prefixed_line = format!(":{trimmed_line}");
             let (parsed, _) = mailparse::parse_header(prefixed_line.as_bytes()).unwrap();
 
             result.push_str(&parsed.get_value())
@@ -632,7 +632,7 @@ pub fn manual_decode_mime_subject(src: &str) -> Result<UTF8String, ParsingError>
                             '\\' => { /* Just ignore and cancel the backslash */ },
                             '?' => {
 
-                                // log::debug!("Base64: {}", encoded_payload);
+                                // log::debug!("Base64: {encoded_payload}");
                                 let payload = match base64::decode(&encoded_payload) {
                                     Ok(p) => p,
                                     Err(e) => return Err(ParsingError::DecodingBase64(e)),
@@ -668,7 +668,7 @@ pub fn manual_decode_mime_subject(src: &str) -> Result<UTF8String, ParsingError>
                             '_' => encoded_payload.push(' '),
                             '?' => {
 
-                                // log::debug!("Q-Encoding: {}", encoded_payload);
+                                // log::debug!("Q-Encoding: {encoded_payload}");
                                 let payload = match quoted_printable::decode(&encoded_payload, quoted_printable::ParseMode::Robust) {
                                     Ok(p) => p,
                                     Err(e) => return Err(ParsingError::QDecoding(e)),
