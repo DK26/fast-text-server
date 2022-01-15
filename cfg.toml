@@ -48,7 +48,7 @@
 [common]
 
     # Sets the alternative encoding for decoding, in case decoding
-    # with the default UTF-8 fails. (Default: UTF-8)
+    # with the default UTF-8 fails. (Default: UTF-8 [lossy])
     # If decoding to UTF-8 fails, this one is attempted instead.
     alt_encoding = "utf-8" 
 

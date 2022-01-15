@@ -16,11 +16,10 @@ use actix_web::{
 use simple_logger::SimpleLogger;
 use clap::{ArgMatches, Arg};
 
-fn arg_matches() -> ArgMatches {
+fn init_arg_matches() -> ArgMatches {
 
-    let about = format!("{description}
-    \nAuthor: {author}\nSource: {source}", 
-        description = "Fast, lightweight RESTful API services for processing, parsing & modifying UTF-8 text messages.",
+    let about = format!("{description}\n\n Author: {author}\n Source: {source}", 
+        description = "Fast Webhooks is a lightweight, high capacity and reliable remote function server which provides REST API services for processing, modifying, re-encoding and matching on UTF-8 data.",
         author = env!("CARGO_PKG_AUTHORS"),
         source = "https://github.com/DK26/fast-webhooks",
     );
@@ -114,7 +113,7 @@ fn arg_matches() -> ArgMatches {
                 .long("alt_encoding")
                 .value_name("ENCODING")
                 .takes_value(true)
-                .help("Sets the alternative encoding for decoding, in case decoding with the default UTF-8 fails. (Default: UTF-8)")
+                .help("Sets the alternative encoding for decoding, in case decoding with the default UTF-8 fails. (Default: UTF-8 [lossy])")
         )
         .arg(
             Arg::new("regex_patterns_limit")
@@ -131,7 +130,7 @@ fn arg_matches() -> ArgMatches {
                 .help("Sets the initial amount of N capacity for cached patterns. (Default: 10000)")
         ).arg(
             Arg::new("log_level")
-                .short('g')
+                .short('L')
                 .long("log_level")
                 .value_name("LEVEL")
                 .takes_value(true)
@@ -142,12 +141,20 @@ fn arg_matches() -> ArgMatches {
 
 lazy_static! {
 
-    static ref CFG: Config = cfglib::init_cfg({
-        let cfg = arg_matches();
+    static ref CFG: Config = {
+
+        // We set the logger with a default `Trace` level to catch any kind of log
+        // before we change the log level to the one from the configurations.
+        SimpleLogger::new()
+            .with_level(log::LevelFilter::Trace).init().unwrap();
+
         println!("{} {}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
+
         log::info!("Initializing service...");
-        cfg
-    });
+        
+        init_arg_matches().into()
+
+    };
 
     static ref PATTERNS_CACHE: RwLock<PatternsCache> = {
 
@@ -168,14 +175,12 @@ async fn main() -> std::io::Result<()> {
         Ok(level) => level,
         Err(e) => {
             let default_log_level = cfglib::default_logger_level();
-            eprintln!("Error: {e}\nSetting the log level to '{default_log_level}'");
+            log::error!("{e}\nSetting the log level to '{default_log_level}'");
             default_log_level.parse().unwrap()
         }
     };
 
-    SimpleLogger::new()
-    .with_level(log_level)
-    .init().unwrap();
+    log::set_max_level(log_level);
 
     // Configurations
     // Service

@@ -303,37 +303,41 @@ impl Default for LoggerConfig {
 
 pub fn default_logger_level() -> String { "info".into() }
 
-pub fn init_cfg(arg_matches: ArgMatches) -> Config {
+impl From<ArgMatches> for Config {
+    
+    fn from(arg_matches: ArgMatches) -> Self {
+        
+        let cfg_file_path = "cfg.toml";
 
-    let cfg_file_path = "cfg.toml";
+        let cfg_file = match Config::from_file(cfg_file_path) {
 
-    let cfg_file = match Config::from_file(cfg_file_path) {
+            Ok(cfg) => cfg,
 
-        Ok(cfg) => cfg,
+            Err(cfg_file_error) => match cfg_file_error {
 
-        Err(cfg_file_error) => match cfg_file_error {
+                CfgFileError::FailedToOpenCfgFile(e) =>  {
+                    log::warn!("Unable to load '{cfg_file_path}' file: {e}");
+                    Config::default()
+                },
 
-            CfgFileError::FailedToOpenCfgFile(e) =>  {
-                log::warn!("Unable to load '{cfg_file_path}' file: {e}");
-                Config::default()
-            },
+                CfgFileError::FailedToReadCfgFile(e) => {
+                    log::error!("Unable to load '{cfg_file_path}' contents: {e}");
+                    std::process::exit(1);
+                },
 
-            CfgFileError::FailedToReadCfgFile(e) => {
-                log::error!("Unable to load '{cfg_file_path}' contents: {e}");
-                std::process::exit(1);
-            },
+                CfgFileError::FailedToParseCfgFile(e) => {
+                    log::error!("Failed to parse '{cfg_file_path}': {e}");
+                    std::process::exit(1);
+                },
+            }
+        };
 
-            CfgFileError::FailedToParseCfgFile(e) => {
-                log::error!("Failed to parse '{cfg_file_path}': {e}");
-                std::process::exit(1);
-            },
-        }
-    };
+        Config::from_arg_matches(arg_matches, cfg_file)
+            .unwrap_or_else(|e| {
+                log::error!("{e}");
+                std::process::exit(1)
+            })
 
-    Config::from_arg_matches(arg_matches, cfg_file)
-        .unwrap_or_else(|e| {
-            log::error!("{e}");
-            std::process::exit(1)
-        })
- 
-}
+    } // fn
+
+} // impl
