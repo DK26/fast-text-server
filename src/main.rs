@@ -148,11 +148,17 @@ lazy_static! {
         SimpleLogger::new()
             .with_level(log::LevelFilter::Trace).init().unwrap();
 
+        // First match and check against arguments
+        // as this may exit the program with a help menu.
+        let arg_matches = init_arg_matches();
+
+        // Then, if there are no problems, continue from here
+
         println!("{} {}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
 
         log::info!("Initializing service...");
         
-        init_arg_matches().into()
+        arg_matches.into()
 
     };
 
