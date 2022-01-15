@@ -109,6 +109,12 @@ impl Default for Config {
 
 }
 
+impl From<&Path> for Config {
+    fn from(path: &Path) -> Self {
+        todo!()
+    }
+}
+
 impl Config {
 
     fn from_file<P: AsRef<Path>>(cfg_file: P) -> Result<Self, CfgFileError> {
@@ -174,6 +180,50 @@ impl Config {
                 }
             } // Self
         ) // Ok()
+
+    } // fn
+
+} // impl
+
+// TODO: A new: `impl From<ArgMatches> for Config`
+// TODO: `impl From<FilePath> for Config`
+// TODO: New Struct: `MixedConfig` (with `base`) or impl Some kind of Operator `+` / `-` for `Config`
+
+
+impl From<ArgMatches> for Config {
+    
+    fn from(arg_matches: ArgMatches) -> Self {
+        
+        let cfg_file_path = "cfg.toml";
+
+        let cfg_file = match Config::from_file(cfg_file_path) {
+
+            Ok(cfg) => cfg,
+
+            Err(cfg_file_error) => match cfg_file_error {
+
+                CfgFileError::FailedToOpenCfgFile(e) =>  {
+                    log::warn!("Unable to load '{cfg_file_path}' file: {e}");
+                    Config::default()
+                },
+
+                CfgFileError::FailedToReadCfgFile(e) => {
+                    log::error!("Unable to load '{cfg_file_path}' contents: {e}");
+                    std::process::exit(1);
+                },
+
+                CfgFileError::FailedToParseCfgFile(e) => {
+                    log::error!("Failed to parse '{cfg_file_path}': {e}");
+                    std::process::exit(1);
+                },
+            }
+        };
+
+        Config::from_arg_matches(arg_matches, cfg_file)
+            .unwrap_or_else(|e| {
+                log::error!("{e}");
+                std::process::exit(1)
+            })
 
     } // fn
 
@@ -303,41 +353,4 @@ impl Default for LoggerConfig {
 
 pub fn default_logger_level() -> String { "info".into() }
 
-impl From<ArgMatches> for Config {
-    
-    fn from(arg_matches: ArgMatches) -> Self {
-        
-        let cfg_file_path = "cfg.toml";
 
-        let cfg_file = match Config::from_file(cfg_file_path) {
-
-            Ok(cfg) => cfg,
-
-            Err(cfg_file_error) => match cfg_file_error {
-
-                CfgFileError::FailedToOpenCfgFile(e) =>  {
-                    log::warn!("Unable to load '{cfg_file_path}' file: {e}");
-                    Config::default()
-                },
-
-                CfgFileError::FailedToReadCfgFile(e) => {
-                    log::error!("Unable to load '{cfg_file_path}' contents: {e}");
-                    std::process::exit(1);
-                },
-
-                CfgFileError::FailedToParseCfgFile(e) => {
-                    log::error!("Failed to parse '{cfg_file_path}': {e}");
-                    std::process::exit(1);
-                },
-            }
-        };
-
-        Config::from_arg_matches(arg_matches, cfg_file)
-            .unwrap_or_else(|e| {
-                log::error!("{e}");
-                std::process::exit(1)
-            })
-
-    } // fn
-
-} // impl
