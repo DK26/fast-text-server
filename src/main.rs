@@ -180,8 +180,8 @@ async fn main() -> std::io::Result<()> {
     let log_level =  match CFG.logger.log_level.parse() {
         Ok(level) => level,
         Err(e) => {
-            let default_log_level = cfglib::default_logger_level();
-            log::error!("{e}\nSetting the log level to '{default_log_level}'");
+            let default_log_level = cfglib::default_logger_level().to_uppercase();
+            log::warn!("Log level: {e}. Continuing with log level `{default_log_level}`.");
             default_log_level.parse().unwrap()
         }
     };
