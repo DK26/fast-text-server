@@ -158,7 +158,37 @@ lazy_static! {
 
         log::info!("Initializing service...");
         
+
+        let cfg_file_path = RelativeFilePath::new("cfg.toml");
+
+        let file_config = match Config::try_from(cfg_file_path) {
+
+            Ok(cfg) => cfg,
+
+            Err(cfg_file_error) => match cfg_file_error {
+
+                CfgFileError::FailedToOpenCfgFile(e) =>  {
+                    log::warn!("Unable to load '{cfg_file_path}' file: {e}");
+                    log::warn!("Full path: '{cfg_file_path:?}'");
+                    Config::default()
+                },
+
+                CfgFileError::FailedToReadCfgFile(e) => {
+                    log::error!("Unable to load '{cfg_file_path}' contents: {e}");
+                    log::error!("Full path: '{cfg_file_path:?}'");
+                    std::process::exit(1);
+                },
+
+                CfgFileError::FailedToParseCfgFile(e) => {
+                    log::error!("Failed to parse '{cfg_file_path}': {e}");
+                    log::error!("Full path: '{cfg_file_path:?}'");
+                    std::process::exit(1);
+                },
+            }
+        };
+        
         arg_matches.into()
+
 
         // TODO: `let file_config: Config = Config::from(FilePath)`
         // TODO: `let args_config: Config = Config::from(ArgMatches)`

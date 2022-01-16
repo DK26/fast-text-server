@@ -1,6 +1,7 @@
 use clap::ArgMatches;
 use serde_derive::Deserialize;
-use std::path::Path;
+use std::ops::Add;
+use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::{
     fs::File, 
@@ -10,7 +11,7 @@ use std::env::current_exe;
 
 #[allow(clippy::enum_variant_names)]
 #[derive(Debug)]
-enum CfgFileError {
+pub enum CfgFileError {
     FailedToOpenCfgFile(std::io::Error),
     FailedToReadCfgFile(std::io::Error),
     FailedToParseCfgFile(toml::de::Error)
@@ -25,7 +26,7 @@ impl std::fmt::Display for CfgFileError {
 impl std::error::Error for CfgFileError { }
 
 #[derive(Debug)]
-enum ConfigError {
+pub enum ConfigError {
     BadArgument(String),
     FileError(CfgFileError)
 }
@@ -109,16 +110,13 @@ impl Default for Config {
 
 }
 
-impl From<&Path> for Config {
-    fn from(path: &Path) -> Self {
-        todo!()
-    }
-}
+type FilePath<'a> = &'a dyn AsRef<Path>;
 
-impl Config {
+impl<'a> TryFrom<FilePath<'a>> for Config {
+    
+    type Error = CfgFileError;
 
-    fn from_file<P: AsRef<Path>>(cfg_file: P) -> Result<Self, CfgFileError> {
-
+    fn try_from(cfg_file: FilePath<'a>) -> Result<Self, Self::Error> {
         let exe_dir = current_exe()
             .unwrap()
             .parent()
@@ -148,8 +146,93 @@ impl Config {
             Err(e) => Err(CfgFileError::FailedToOpenCfgFile(e))
         }
     }
+}
 
-    fn from_arg_matches(arg_matches: ArgMatches, base: Config) -> Result<Self, ConfigError> {
+/// Automatically produces a full path out of a relative path.
+/// e.g. `RelativeFilePath::new("cfg.toml")` allows us to get a reference (a `Path` from `as_ref()`)
+/// which includes a full path to the project, joined together with the `cfg.toml` file name.
+pub struct RelativeFilePath {
+    relative_path: PathBuf,
+    full_path: PathBuf
+}
+
+impl RelativeFilePath {
+    pub fn new(path: impl AsRef<Path>) -> Self {
+
+        let exe_dir = current_exe()
+            .unwrap()
+            .parent()
+            .unwrap()
+            .to_owned();
+            
+        Self {
+            relative_path: path.as_ref().to_owned(),
+            full_path: exe_dir.join(path)
+        }
+    }
+}
+
+impl std::fmt::Display for RelativeFilePath {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.relative_path.display())
+    }
+}
+
+impl std::fmt::Debug for RelativeFilePath {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // f.debug_struct("RelativeFilePath").field("relative_path", &self.relative_path).field("full_path", &self.full_path).finish()
+        write!(f, "{}", self.full_path.display())
+    }
+}
+
+impl AsRef<Path> for RelativeFilePath {
+    #[inline]
+    fn as_ref(&self) -> &Path {
+        self.full_path.as_ref()
+    }
+}
+
+impl TryFrom<RelativeFilePath> for Config {
+
+    type Error = CfgFileError;
+
+    fn try_from (cfg_file: RelativeFilePath) -> Result<Self, Self::Error> {
+    
+        let file = File::open(&cfg_file);
+    
+        match file {
+    
+            Ok(mut f) => {
+
+                let mut toml_contents= String::new();
+
+                if let Err(e) = f.read_to_string(&mut toml_contents) {
+                    return Err(CfgFileError::FailedToReadCfgFile(e))
+                }
+            
+                // Returns a `Config` object.
+                match toml::from_str(&toml_contents) {
+                    Ok(r) => Ok(r),
+                    Err(e) => Err(CfgFileError::FailedToParseCfgFile(e))
+                }
+            }
+            Err(e) => Err(CfgFileError::FailedToOpenCfgFile(e))
+        }
+    }
+}
+
+impl Add for Config {
+
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        todo!()
+    }
+}
+
+impl Config {
+
+    fn mix_from_arg_matches(arg_matches: ArgMatches, base: Config) -> Result<Self, ConfigError> {
 
         Ok(
             Self {
@@ -194,32 +277,33 @@ impl From<ArgMatches> for Config {
     
     fn from(arg_matches: ArgMatches) -> Self {
         
-        let cfg_file_path = "cfg.toml";
+        // let cfg_file_path = "cfg.toml";
 
-        let cfg_file = match Config::from_file(cfg_file_path) {
+        // // let cfg_file = match Config::from_file(cfg_file_path) {
+        // let cfg_file = match Config::try_from(cfg_file_path.as_ref()) {
 
-            Ok(cfg) => cfg,
+        //     Ok(cfg) => cfg,
 
-            Err(cfg_file_error) => match cfg_file_error {
+        //     Err(cfg_file_error) => match cfg_file_error {
 
-                CfgFileError::FailedToOpenCfgFile(e) =>  {
-                    log::warn!("Unable to load '{cfg_file_path}' file: {e}");
-                    Config::default()
-                },
+        //         CfgFileError::FailedToOpenCfgFile(e) =>  {
+        //             log::warn!("Unable to load '{cfg_file_path}' file: {e}");
+        //             Config::default()
+        //         },
 
-                CfgFileError::FailedToReadCfgFile(e) => {
-                    log::error!("Unable to load '{cfg_file_path}' contents: {e}");
-                    std::process::exit(1);
-                },
+        //         CfgFileError::FailedToReadCfgFile(e) => {
+        //             log::error!("Unable to load '{cfg_file_path}' contents: {e}");
+        //             std::process::exit(1);
+        //         },
 
-                CfgFileError::FailedToParseCfgFile(e) => {
-                    log::error!("Failed to parse '{cfg_file_path}': {e}");
-                    std::process::exit(1);
-                },
-            }
-        };
+        //         CfgFileError::FailedToParseCfgFile(e) => {
+        //             log::error!("Failed to parse '{cfg_file_path}': {e}");
+        //             std::process::exit(1);
+        //         },
+        //     }
+        // };
 
-        Config::from_arg_matches(arg_matches, cfg_file)
+        Config::mix_from_arg_matches(arg_matches, cfg_file)
             .unwrap_or_else(|e| {
                 log::error!("{e}");
                 std::process::exit(1)
