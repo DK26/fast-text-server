@@ -196,8 +196,7 @@ pub async fn regex_to_json(request: web::Json<RegexData>) -> impl Responder {
 
     for key in re.capture_names().flatten() {
         if let Some(value) = caps.name(key) {
-            let value = value.as_str();
-            response.push_str(format!("\"{key}\":\"{value}\",").as_str());
+            response.push_str(&format!("\"{}\":\"{}\",", key, value.as_str()));
         }
     }
 
