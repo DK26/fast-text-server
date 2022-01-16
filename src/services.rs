@@ -182,7 +182,9 @@ pub async fn regex_capture_group(request: web::Json<RegexData>) -> impl Responde
 pub async fn regex_to_json(request: web::Json<RegexData>) -> impl Responder { 
 
     // TODO: Return a JSON in the response with all Regex fields e.g. `(?P<year>\d+)` may return `{"year": 2022}`
-    
+    // TODO: Consider how to use `read` on RWLock and `write` only when needed (maybe move sync stuff into the PatternsCache?)
+    // let mut patterns_cache = PATTERNS_CACHE.read(); 
+
     let mut patterns_cache = PATTERNS_CACHE.write();
 
     let re = patterns_cache.get(&request.pattern);
