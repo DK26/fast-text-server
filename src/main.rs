@@ -161,7 +161,7 @@ lazy_static! {
 
         let cfg_file_path = RelativeFilePath::new("cfg.toml");
 
-        let file_config = match Config::try_from(cfg_file_path) {
+        let cfg_file = match Config::try_from(cfg_file_path.clone()) {
 
             Ok(cfg) => cfg,
 
@@ -187,7 +187,12 @@ lazy_static! {
             }
         };
         
-        arg_matches.into()
+        // arg_matches.into()
+        Config::mix_from_arg_matches(arg_matches, cfg_file)
+            .unwrap_or_else(|e| {
+                log::error!("{e}");
+                std::process::exit(1)
+            })
 
 
         // TODO: `let file_config: Config = Config::from(FilePath)`

@@ -1,6 +1,6 @@
 use clap::ArgMatches;
 use serde_derive::Deserialize;
-use std::ops::Add;
+use std::ops::BitOr;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::{
@@ -110,47 +110,48 @@ impl Default for Config {
 
 }
 
-type FilePath<'a> = &'a dyn AsRef<Path>;
+// type FilePath<'a> = &'a dyn AsRef<Path>;
 
-impl<'a> TryFrom<FilePath<'a>> for Config {
+// impl<'a> TryFrom<FilePath<'a>> for Config {
     
-    type Error = CfgFileError;
+//     type Error = CfgFileError;
 
-    fn try_from(cfg_file: FilePath<'a>) -> Result<Self, Self::Error> {
-        let exe_dir = current_exe()
-            .unwrap()
-            .parent()
-            .unwrap()
-            .to_owned();
+//     fn try_from(cfg_file: FilePath<'a>) -> Result<Self, Self::Error> {
+//         let exe_dir = current_exe()
+//             .unwrap()
+//             .parent()
+//             .unwrap()
+//             .to_owned();
             
-        let toml_path = exe_dir.join(cfg_file);
+//         let toml_path = exe_dir.join(cfg_file);
     
-        let file = File::open(&toml_path);
+//         let file = File::open(&toml_path);
     
-        match file {
+//         match file {
     
-            Ok(mut f) => {
+//             Ok(mut f) => {
 
-                let mut toml_contents= String::new();
+//                 let mut toml_contents= String::new();
 
-                if let Err(e) = f.read_to_string(&mut toml_contents) {
-                    return Err(CfgFileError::FailedToReadCfgFile(e))
-                }
+//                 if let Err(e) = f.read_to_string(&mut toml_contents) {
+//                     return Err(CfgFileError::FailedToReadCfgFile(e))
+//                 }
             
-                // Returns a `Config` object.
-                match toml::from_str(&toml_contents) {
-                    Ok(r) => Ok(r),
-                    Err(e) => Err(CfgFileError::FailedToParseCfgFile(e))
-                }
-            }
-            Err(e) => Err(CfgFileError::FailedToOpenCfgFile(e))
-        }
-    }
-}
+//                 // Returns a `Config` object.
+//                 match toml::from_str(&toml_contents) {
+//                     Ok(r) => Ok(r),
+//                     Err(e) => Err(CfgFileError::FailedToParseCfgFile(e))
+//                 }
+//             }
+//             Err(e) => Err(CfgFileError::FailedToOpenCfgFile(e))
+//         }
+//     }
+// }
 
 /// Automatically produces a full path out of a relative path.
 /// e.g. `RelativeFilePath::new("cfg.toml")` allows us to get a reference (a `Path` from `as_ref()`)
 /// which includes a full path to the project, joined together with the `cfg.toml` file name.
+#[derive(Clone)]
 pub struct RelativeFilePath {
     relative_path: PathBuf,
     full_path: PathBuf
@@ -221,18 +222,24 @@ impl TryFrom<RelativeFilePath> for Config {
     }
 }
 
-impl Add for Config {
 
+impl BitOr for Config {
     type Output = Self;
 
-    fn add(self, rhs: Self) -> Self::Output {
+    /// Usage: `args_config | cfg_file_config | default_config`
+    /// Left item as the highest priority
+    fn bitor(self, rhs: Self) -> Self::Output {
+        // TODO: If there is None and a None, assign None 
+        // TODO: If there is None and a Some, assign Some
+        // TODO: If there is Some and a Some, assign the first Some
         todo!()
     }
+
 }
 
 impl Config {
 
-    fn mix_from_arg_matches(arg_matches: ArgMatches, base: Config) -> Result<Self, ConfigError> {
+    pub fn mix_from_arg_matches(arg_matches: ArgMatches, base: Config) -> Result<Self, ConfigError> {
 
         Ok(
             Self {
@@ -273,45 +280,45 @@ impl Config {
 // TODO: New Struct: `MixedConfig` (with `base`) or impl Some kind of Operator `+` / `-` for `Config`
 
 
-impl From<ArgMatches> for Config {
+// impl From<ArgMatches> for Config {
     
-    fn from(arg_matches: ArgMatches) -> Self {
+//     fn from(arg_matches: ArgMatches) -> Self {
         
-        // let cfg_file_path = "cfg.toml";
+//         // let cfg_file_path = "cfg.toml";
 
-        // // let cfg_file = match Config::from_file(cfg_file_path) {
-        // let cfg_file = match Config::try_from(cfg_file_path.as_ref()) {
+//         // // let cfg_file = match Config::from_file(cfg_file_path) {
+//         // let cfg_file = match Config::try_from(cfg_file_path.as_ref()) {
 
-        //     Ok(cfg) => cfg,
+//         //     Ok(cfg) => cfg,
 
-        //     Err(cfg_file_error) => match cfg_file_error {
+//         //     Err(cfg_file_error) => match cfg_file_error {
 
-        //         CfgFileError::FailedToOpenCfgFile(e) =>  {
-        //             log::warn!("Unable to load '{cfg_file_path}' file: {e}");
-        //             Config::default()
-        //         },
+//         //         CfgFileError::FailedToOpenCfgFile(e) =>  {
+//         //             log::warn!("Unable to load '{cfg_file_path}' file: {e}");
+//         //             Config::default()
+//         //         },
 
-        //         CfgFileError::FailedToReadCfgFile(e) => {
-        //             log::error!("Unable to load '{cfg_file_path}' contents: {e}");
-        //             std::process::exit(1);
-        //         },
+//         //         CfgFileError::FailedToReadCfgFile(e) => {
+//         //             log::error!("Unable to load '{cfg_file_path}' contents: {e}");
+//         //             std::process::exit(1);
+//         //         },
 
-        //         CfgFileError::FailedToParseCfgFile(e) => {
-        //             log::error!("Failed to parse '{cfg_file_path}': {e}");
-        //             std::process::exit(1);
-        //         },
-        //     }
-        // };
+//         //         CfgFileError::FailedToParseCfgFile(e) => {
+//         //             log::error!("Failed to parse '{cfg_file_path}': {e}");
+//         //             std::process::exit(1);
+//         //         },
+//         //     }
+//         // };
 
-        Config::mix_from_arg_matches(arg_matches, cfg_file)
-            .unwrap_or_else(|e| {
-                log::error!("{e}");
-                std::process::exit(1)
-            })
+//         Config::mix_from_arg_matches(arg_matches, cfg_file)
+//             .unwrap_or_else(|e| {
+//                 log::error!("{e}");
+//                 std::process::exit(1)
+//             })
 
-    } // fn
+//     } // fn
 
-} // impl
+// } // impl
 
 fn default_common_config() -> CommonConfig { CommonConfig::default() }
 fn default_service_config() -> ServiceConfig { ServiceConfig::default() }
