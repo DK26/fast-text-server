@@ -149,8 +149,8 @@ impl Default for Config {
 // }
 
 /// Automatically produces a full path out of a relative path.
-/// e.g. `RelativeFilePath::new("cfg.toml")` allows us to get a reference (a `Path` from `as_ref()`)
-/// which includes a full path to the project, joined together with the `cfg.toml` file name.
+/// e.g. `RelativeFilePath::new("cfg.toml")` allows us to get a reference (a `&Path` from `as_ref()`)
+/// which includes the full path to the home directory, joined together with the `cfg.toml` file name.
 #[derive(Clone)]
 pub struct RelativeFilePath {
     relative_path: PathBuf,
