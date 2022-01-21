@@ -7,23 +7,19 @@ mod utils;
 
 use parking_lot::RwLock;
 
+use actix_web::{App, HttpServer};
 use cfglib::*;
-use utils::PatternsCache;
-use actix_web::{
-    HttpServer,
-    App
-};
+use clap::{Arg, ArgMatches};
 use simple_logger::SimpleLogger;
-use clap::{ArgMatches, Arg};
+use utils::PatternsCache;
 
 fn init_arg_matches() -> ArgMatches {
-
     let about = format!("{description}\n\n Author: {author}\n Source: {source}", 
         description = "Fast Webhooks is a lightweight, high capacity and reliable remote function server which provides REST API services for processing, modifying, re-encoding and matching on UTF-8 data.",
         author = env!("CARGO_PKG_AUTHORS"),
         source = "https://github.com/DK26/fast-webhooks",
     );
- 
+
     clap::App::new(env!("CARGO_PKG_NAME"))
         .version(env!("CARGO_PKG_VERSION"))
         .about(about.as_str())
@@ -157,7 +153,7 @@ lazy_static! {
         println!("{} {}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
 
         log::info!("Initializing service...");
-        
+
 
         let cfg_file_path = RelativeFilePath::new("cfg.toml");
 
@@ -187,7 +183,7 @@ lazy_static! {
                 },
             }
         };
-        
+
         // arg_matches.into()
         Config::mix_from_arg_matches(arg_matches, cfg_file)
             .unwrap_or_else(|e| {
@@ -205,19 +201,18 @@ lazy_static! {
     static ref PATTERNS_CACHE: RwLock<PatternsCache> = {
 
         let cache = PatternsCache::with_capacity(CFG.cache.regex_patterns_capacity)
-            .limit(CFG.cache.regex_patterns_limit); 
+            .limit(CFG.cache.regex_patterns_limit);
 
         RwLock::new(cache)
     };
 
 }
 
-pub const DEFAULT_CHARSET : &str = "utf-8";
+pub const DEFAULT_CHARSET: &str = "utf-8";
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-
-    let log_level =  match CFG.logger.log_level.parse() {
+    let log_level = match CFG.logger.log_level.parse() {
         Ok(level) => level,
         Err(e) => {
             let default_log_level = cfglib::default_logger_level().to_uppercase();
@@ -245,7 +240,10 @@ async fn main() -> std::io::Result<()> {
     log::debug!("alt_encoding = {}", CFG.common.alt_encoding);
 
     // Cache
-    log::debug!("regex_patterns_capacity = {}", CFG.cache.regex_patterns_capacity);
+    log::debug!(
+        "regex_patterns_capacity = {}",
+        CFG.cache.regex_patterns_capacity
+    );
     log::debug!("regex_patterns_limit = {}", CFG.cache.regex_patterns_limit);
 
     // Logger
