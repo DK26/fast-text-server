@@ -94,7 +94,7 @@ impl DecodeUTF8 for &[u8] {
 pub fn decode_bytes(src: &[u8], encoding: &str, trap: DecoderTrap) -> DecodingResult {
     let encoding = String::from(encoding).trim().to_lowercase();
 
-    let mut src_decoded = String::new();
+    let mut src_decoded = String::with_capacity(src.len() * 2);
 
     let result: String = match encoding.as_str() {
         "utf8" | "utf-8" => src.as_utf8()?,
@@ -271,7 +271,7 @@ pub fn decode_bytes(src: &[u8], encoding: &str, trap: DecoderTrap) -> DecodingRe
 // converts it to a string with the proper escaped characters.
 pub fn unescape(s: &str) -> Option<String> {
     let mut queue: VecDeque<_> = String::from(s).chars().collect();
-    let mut s = String::new();
+    let mut s = String::with_capacity(s.len());
 
     while let Some(c) = queue.pop_front() {
         if c != '\\' {
@@ -404,9 +404,10 @@ pub fn attempt_decode(src: &[u8], encoding: &str) -> DecodingResult {
 #[inline]
 pub fn normalize_str(string: &str) -> Cow<'_, str> {
     // This is beyond ridiculous -- haven't found a better way yet.
-    let special_signs = [r"\\", r"\n", r"\r", r"\t", r"\=", r" =?", r"?= "];
-    for sign in special_signs {
-        if string.contains(sign) {
+    // TODO: Find a solution (maybe with tuples?) to replace only what's needed, using Cow
+    let special_symbols = [r"\\", r"\n", r"\r", r"\t", r"\=", r" =?", r"?= "];
+    for symbol in special_symbols {
+        if string.contains(symbol) {
             return Cow::Owned(
                 string
                     .replace(r"\\", "\\")
@@ -423,7 +424,8 @@ pub fn normalize_str(string: &str) -> Cow<'_, str> {
 }
 
 pub fn decode_mime_header(src: &str) -> String {
-    let mut result = String::new();
+    // Decoding usually means the decoded data is smaller or about the same in size as it does not include any MIME header special symbols.
+    let mut result = String::with_capacity(src.len());
 
     for line in src.lines() {
         let trimmed_line = line.trim_start();
