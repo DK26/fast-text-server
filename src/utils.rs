@@ -321,7 +321,7 @@ pub fn unescape_as_bytes(s: &str) -> Option<Vec<u8>> {
             Some('u') => s.push(try_option!(unescape_unicode(&mut queue)) as u8),
             Some('x') => s.push(try_option!(unescape_byte(&mut queue)) as u8),
             Some(c) if c.is_digit(8) => s.push(try_option!(unescape_octal(c, &mut queue)) as u8),
-            _ => return None,
+            _ => return None, // TODO: Return Error: Bad Encoding `\` was combined with an illegal char.
         };
     }
 
@@ -387,6 +387,7 @@ fn unescape_octal_no_leading(c: char, queue: &mut VecDeque<char>) -> Option<char
 /// Attempt to decode given `src` bytes slice into a given encoding format.
 /// If fails, attempt to use alternative encoding `alt_encoding` from `cfg.toml`.
 /// If that fails, return a lossy UTF-8.
+/// TODO: Replace `DecodingResult` with `String` or `Cow<'_, str>`; This function cannot fail.
 pub fn attempt_decode(src: &[u8], encoding: &str) -> DecodingResult {
     Ok(match decode_bytes(src, encoding, DEFAULT_DECODER_TRAP) {
         Ok(result) => result,
