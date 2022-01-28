@@ -404,27 +404,22 @@ pub fn attempt_decode(src: &[u8], encoding: &str) -> DecodingResult {
 #[inline]
 pub fn normalize_str(string: &str) -> Cow<'_, str> {
     // This is beyond ridiculous -- haven't found a better way yet.
-    if string.contains(r"\\")
-        || string.contains(r"\n")
-        || string.contains(r"\r")
-        || string.contains(r"\t")
-        || string.contains(r"\=")
-        || string.contains(r" =?")
-        || string.contains(r"?= ")
-    {
-        Cow::Owned(
-            string
-                .replace(r"\\", "\\")
-                .replace(r"\n", "\n")
-                .replace(r"\r", "\r")
-                .replace(r"\t", "\t")
-                .replace(r"\=", "=")
-                .replace(" =?", " \r\n=?")
-                .replace("?= ", "?=\r\n "),
-        )
-    } else {
-        Cow::Borrowed(string)
+    let special_signs = [r"\\", r"\n", r"\r", r"\t", r"\=", r" =?", r"?= "];
+    for sign in special_signs {
+        if string.contains(sign) {
+            return Cow::Owned(
+                string
+                    .replace(r"\\", "\\")
+                    .replace(r"\n", "\n")
+                    .replace(r"\r", "\r")
+                    .replace(r"\t", "\t")
+                    .replace(r"\=", "=")
+                    .replace(" =?", " \r\n=?")
+                    .replace("?= ", "?=\r\n "),
+            );
+        };
     }
+    Cow::Borrowed(string)
 }
 
 pub fn decode_mime_header(src: &str) -> String {
