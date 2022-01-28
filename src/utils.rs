@@ -26,9 +26,13 @@ macro_rules! try_option {
 
 pub const DEFAULT_DECODER_TRAP: DecoderTrap = DecoderTrap::Replace;
 
-pub type UTF8String = String;
+pub type DecodingResult<'src> = Result<Cow<'src, str>, Cow<'static, str>>;
 
-pub type DecodingResult = Result<UTF8String, Cow<'static, str>>;
+impl<'src> From<std::str::Utf8Error> for DecodingResult<'src> {
+    fn from(_: std::str::Utf8Error) -> Self {
+        todo!()
+    }
+}
 
 // pub type UTF8Result = Result<UTF8String, FromUtf8Error>;
 
@@ -36,15 +40,16 @@ pub fn reverse_str(src: &str) -> String {
     src.chars().rev().collect()
 }
 
-pub fn to_utf8_lossy(src: &[u8]) -> UTF8String {
-    String::from_utf8_lossy(src).to_string()
+pub fn to_utf8_lossy(src: &[u8]) -> Cow<'_, str> {
+    match std::str::from_utf8(src) {
+        Ok(src_as_utf8) => Cow::Borrowed(src_as_utf8),
+        Err(_) => Cow::Owned(String::from_utf8_lossy(src).to_string()),
+    }
 }
 
 pub fn to_utf8(src: &[u8]) -> DecodingResult {
-    match String::from_utf8(src.to_owned()) {
-        Ok(utf_8_string) => Ok(utf_8_string),
-        Err(e) => Err(Cow::Owned(e.to_string())),
-    }
+    let src_as_utf8 = std::str::from_utf8(src)?;
+    Ok(Cow::Borrowed(src_as_utf8))
 }
 
 pub trait Reverse {
@@ -56,12 +61,12 @@ pub trait DecodeUTF8 {
 }
 
 pub trait AsUTF8Lossy {
-    fn as_utf8_lossy(&self) -> UTF8String;
+    fn as_utf8_lossy(&self) -> Cow<'_, str>;
 }
 
 impl AsUTF8Lossy for &[u8] {
     #[inline]
-    fn as_utf8_lossy(&self) -> UTF8String {
+    fn as_utf8_lossy(&self) -> Cow<'_, str> {
         to_utf8_lossy(self)
     }
 }
@@ -91,7 +96,11 @@ impl DecodeUTF8 for &[u8] {
     }
 }
 
-pub fn decode_bytes(src: &[u8], encoding: &str, trap: DecoderTrap) -> DecodingResult {
+pub fn decode_bytes<'src, 'encoder>(
+    src: &'src [u8],
+    encoding: &'encoder str,
+    trap: DecoderTrap,
+) -> DecodingResult<'src> {
     let encoding = String::from(encoding).trim().to_lowercase();
 
     let mut src_decoded = String::with_capacity(src.len() * 2);
@@ -264,7 +273,7 @@ pub fn decode_bytes(src: &[u8], encoding: &str, trap: DecoderTrap) -> DecodingRe
         _ => src.as_utf8()?,
     };
 
-    Ok(result)
+    Ok(Cow::Owned(result))
 }
 
 // Takes in a string with backslash escapes written out with literal backslash characters and
@@ -388,7 +397,10 @@ fn unescape_octal_no_leading(c: char, queue: &mut VecDeque<char>) -> Option<char
 /// If fails, attempt to use alternative encoding `alt_encoding` from `cfg.toml`.
 /// If that fails, return a lossy UTF-8.
 /// TODO: Replace `DecodingResult` with `String` or `Cow<'_, str>`; This function cannot fail.
-pub fn attempt_decode(src: &[u8], encoding: &str) -> DecodingResult {
+pub fn attempt_decode<'src, 'encoding>(
+    src: &'src [u8],
+    encoding: &'encoding str,
+) -> DecodingResult<'src> {
     Ok(match decode_bytes(src, encoding, DEFAULT_DECODER_TRAP) {
         Ok(result) => result,
         // Err(_) => match decode_bytes(src, &CFG.common.alt_encoding, DEFAULT_DECODER_TRAP) {
@@ -515,7 +527,7 @@ pub enum ParsingError {
 }
 
 // pub fn decode_mime_subject(src: &str) -> DecodingResult {
-pub fn manual_decode_mime_subject(src: &str) -> Result<UTF8String, ParsingError> {
+pub fn manual_decode_mime_subject(src: &str) -> Result<String, ParsingError> {
     // CANCELED: When check if ASCII. In this case just return as is.
 
     // DONE: Currently we're decoding a MIME subject / header that begins with `<codec>?B?`, We need to also address `<codec>?Q?` hexa format. [The (q)uoted_printable module: https://github.com/staktrace/quoted-printable / https://datatracker.ietf.org/doc/html/rfc2045#section-6.7 ` quoted_printable::decode(&trimmed, quoted_printable::ParseMode::Robust);`]
