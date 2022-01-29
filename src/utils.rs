@@ -435,32 +435,35 @@ pub fn normalize_str(string: &str) -> Cow<'_, str> {
     Cow::Borrowed(string)
 }
 
-pub fn decode_mime_header(src: &str) -> String {
-    // Decoding usually means the decoded data is smaller or about the same in size as it does not include any MIME header special symbols.
-    let mut result = String::with_capacity(src.len());
+pub fn decode_mime_header(src: &str) -> Cow<'_, str> {
+    if !src.contains("=?") && !src.contains("\\x") && !src.contains("\\u") {
+        Cow::Borrowed(src);
+    } else {
+        // Decoding usually means the decoded data is smaller or about the same in size as it does not include any MIME header special symbols.
+        let mut result = String::with_capacity(src.len());
 
-    for line in src.lines() {
-        let trimmed_line = line.trim_start();
+        for line in src.lines() {
+            let trimmed_line = line.trim_start();
 
-        if trimmed_line.starts_with("=?") && trimmed_line.ends_with("?=") {
-            let prefixed_line = format!(":{trimmed_line}");
-            let (parsed, _) = mailparse::parse_header(prefixed_line.as_bytes()).unwrap();
+            if trimmed_line.starts_with("=?") && trimmed_line.ends_with("?=") {
+                let prefixed_line = format!(":{trimmed_line}");
+                let (parsed, _) = mailparse::parse_header(prefixed_line.as_bytes()).unwrap();
 
-            result.push_str(&parsed.get_value())
-        } else {
-            if trimmed_line.contains("\\x") || trimmed_line.contains("\\u") {
-                let unescaped_line_bytes = unescape_as_bytes(trimmed_line).unwrap();
-                let unescaped_line =
-                    attempt_decode(&unescaped_line_bytes, DEFAULT_CHARSET).unwrap();
-
-                result.push_str(&unescaped_line)
+                result.push_str(&parsed.get_value())
             } else {
-                result.push_str(trimmed_line)
+                if trimmed_line.contains("\\x") || trimmed_line.contains("\\u") {
+                    let unescaped_line_bytes = unescape_as_bytes(trimmed_line).unwrap();
+                    let unescaped_line =
+                        attempt_decode(&unescaped_line_bytes, DEFAULT_CHARSET).unwrap();
+
+                    result.push_str(&unescaped_line)
+                } else {
+                    result.push_str(trimmed_line)
+                }
             }
         }
+        Cow::Owned(result)
     }
-
-    result
 }
 
 pub fn decode_quoted_printable(src: String, charset: &str) -> String {
