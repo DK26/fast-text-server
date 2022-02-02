@@ -529,6 +529,8 @@ pub enum ParsingError {
     QDecoding(QuotedPrintableError),
 }
 
+impl Error for ParsingError {}
+
 // pub fn decode_mime_subject(src: &str) -> DecodingResult {
 pub fn manual_decode_mime_subject(src: &str) -> Result<String, ParsingError> {
     // CANCELED: When check if ASCII. In this case just return as is.
