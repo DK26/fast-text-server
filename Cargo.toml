@@ -23,3 +23,8 @@ num_cpus = "1.13"
 clap = "3"
 mailparse = "0.13.5"
 quoted_printable = "0.4.3"
+
+[dev-dependencies]
+
+# https://bheisler.github.io/criterion.rs/book/getting_started.html
+criterion = { version = "0.3", features = ["html_reports"] }
