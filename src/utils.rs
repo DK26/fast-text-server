@@ -767,9 +767,9 @@ impl<'cache> PatternsCache {
 
     #[inline]
     pub fn clear(&mut self) {
-        {
-            self.map.clear();
-        }
+        // {
+        self.map.clear();
+        // }
         self.size = 0;
     }
 }
