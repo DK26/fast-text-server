@@ -63,7 +63,7 @@ pub async fn decode_quoted_printable(req_body: String) -> impl Responder {
     //     }
     // };
 
-    let response = utils::decode_quoted_printable(req_body, DEFAULT_CHARSET);
+    let response = utils::decode_quoted_printable(&req_body, DEFAULT_CHARSET).unwrap();
 
     HttpResponse::Ok().body(response.into_owned())
 }
@@ -74,9 +74,11 @@ pub async fn decode_quoted_printable_charset(
     req_body: String,
 ) -> impl Responder {
     let response = match quoted_printable::decode(&req_body, quoted_printable::ParseMode::Robust) {
-        Ok(v) => utils::attempt_decode(&v, &charset).unwrap(),
+        Ok(v) => v,
         Err(_) => return HttpResponse::Ok().body(req_body),
     };
+
+    let response = utils::attempt_decode(&response, &charset).unwrap();
 
     HttpResponse::Ok().body(response.into_owned())
 }
@@ -130,7 +132,7 @@ pub async fn decode_mime_header_rfc822(req_body: web::Bytes) -> impl Responder {
 
 #[post("/decode_auto")]
 pub async fn decode_auto(req_body: String) -> impl Responder {
-    let response = utils::auto_decode(req_body, DEFAULT_CHARSET);
+    let response = utils::auto_decode(&req_body, DEFAULT_CHARSET).unwrap();
 
     HttpResponse::Ok().body(response.into_owned())
 }
@@ -140,7 +142,7 @@ pub async fn decode_auto_charset(
     web::Path((charset,)): web::Path<(String,)>,
     req_body: String,
 ) -> impl Responder {
-    let response = utils::auto_decode(req_body, &charset);
+    let response = utils::auto_decode(&req_body, &charset).unwrap();
 
     HttpResponse::Ok().body(response.into_owned())
 }
