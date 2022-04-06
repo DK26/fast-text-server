@@ -1,3 +1,6 @@
+#![warn(clippy::all, clippy::pedantic)]
+#![allow(clippy::unused_async)]
+
 #[macro_use]
 extern crate lazy_static;
 
