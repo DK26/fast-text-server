@@ -513,7 +513,7 @@ pub fn decode_quoted_printable<'src, 'charset>(
 //     'charset: 'src,
 {
     match quoted_printable::decode(&src, quoted_printable::ParseMode::Robust) {
-        Ok(v) => attempt_decode(&v, charset),
+        Ok(v) => Ok(Cow::Owned(attempt_decode(&v, charset)?.into_owned())),
         Err(_) => Ok(Cow::Borrowed(src)),
     }
 }
