@@ -118,7 +118,7 @@ pub async fn decode_mime_header(req_body: String) -> impl Responder {
     //     .map(|x| utils::attempt_decode(&x, &DEFAULT_ENCODING).unwrap())
     //     .collect();
 
-    let response = utils::decode_mime_header(&normalized_req_body);
+    let response = utils::decode_mime_header(&normalized_req_body).unwrap();
 
     HttpResponse::Ok().body(response.into_owned())
 }

@@ -462,9 +462,10 @@ pub fn normalize_str(string: &str) -> Cow<'_, str> {
     Cow::Borrowed(string)
 }
 
-pub fn decode_mime_header(src: &str) -> Cow<'_, str> {
+// pub fn decode_mime_header(src: &str) -> Cow<'_, str> {
+pub fn decode_mime_header(src: &str) -> DecodingResult {
     if !src.contains("=?") && !src.contains("\\x") && !src.contains("\\u") {
-        Cow::Borrowed(src)
+        Ok(Cow::Borrowed(src))
     } else {
         // Decoding usually means the decoded data is smaller or about the same in size as it does not include any MIME header special symbols.
         let mut result = String::with_capacity(src.len());
@@ -487,7 +488,7 @@ pub fn decode_mime_header(src: &str) -> Cow<'_, str> {
                 result.push_str(trimmed_line)
             }
         }
-        Cow::Owned(result)
+        Ok(Cow::Owned(result))
     }
 
     // } else {
@@ -521,16 +522,20 @@ pub fn decode_quoted_printable<'src, 'charset>(
 // pub fn auto_decode(src: String, charset: &str) -> String {
 // pub fn auto_decode<'src, 'charset>(src: &'src str, charset: &'charset str) -> Cow<'src, str> {
 pub fn auto_decode<'src, 'charset>(src: &'src str, charset: &'charset str) -> DecodingResult<'src> {
-    let src_normalized = &*normalize_str(&src);
+    let src_normalized = normalize_str(&src);
 
-    let src_normalized_upper = &*src_normalized.to_uppercase();
+    let src_normalized_upper = src_normalized.to_uppercase();
 
     if src_normalized_upper.contains("?Q?") || src_normalized_upper.contains("?B?") {
-        Ok(decode_mime_header(src_normalized))
+        Ok(Cow::Owned(
+            decode_mime_header(&src_normalized)?.into_owned(), // TODO: It kinda beats the purpose for Cow. Consider using Rc/Arc/Box for Owned values.
+        ))
     } else if src_normalized.contains("\\x") || src_normalized.contains("\\u") {
         let unescaped_bytes = unescape_as_bytes(&src_normalized).unwrap();
 
-        attempt_decode(&unescaped_bytes, charset)
+        Ok(Cow::Owned(
+            attempt_decode(&unescaped_bytes, charset)?.into_owned(),
+        ))
     } else {
         decode_quoted_printable(src, charset)
     }
@@ -579,163 +584,163 @@ pub enum ParsingError {
 // impl Error for ParsingError {}
 
 // pub fn decode_mime_subject(src: &str) -> DecodingResult {
-pub fn manual_decode_mime_subject(src: &str) -> Result<String, ParsingError> {
-    // CANCELED: When check if ASCII. In this case just return as is.
+// pub fn manual_decode_mime_subject(src: &str) -> Result<String, ParsingError> {
+//     // CANCELED: When check if ASCII. In this case just return as is.
 
-    // DONE: Currently we're decoding a MIME subject / header that begins with `<codec>?B?`, We need to also address `<codec>?Q?` hexa format. [The (q)uoted_printable module: https://github.com/staktrace/quoted-printable / https://datatracker.ietf.org/doc/html/rfc2045#section-6.7 ` quoted_printable::decode(&trimmed, quoted_printable::ParseMode::Robust);`]
-    // CANCELED: What if there is a question mark within the content of a `Q` format message? Check if that is probable and act if necessary.
+//     // DONE: Currently we're decoding a MIME subject / header that begins with `<codec>?B?`, We need to also address `<codec>?Q?` hexa format. [The (q)uoted_printable module: https://github.com/staktrace/quoted-printable / https://datatracker.ietf.org/doc/html/rfc2045#section-6.7 ` quoted_printable::decode(&trimmed, quoted_printable::ParseMode::Robust);`]
+//     // CANCELED: What if there is a question mark within the content of a `Q` format message? Check if that is probable and act if necessary.
 
-    let mut parsing_state = ParsingState::NewScan;
+//     let mut parsing_state = ParsingState::NewScan;
 
-    let mut encoded_payload = String::new();
-    let mut final_result = String::new();
-    let mut decoded_payload = Vec::<u8>::new();
+//     let mut encoded_payload = String::new();
+//     let mut final_result = String::new();
+//     let mut decoded_payload = Vec::<u8>::new();
 
-    let mut current_charset_range = ViewRange::new();
-    let mut prev_charset_range: Option<ViewRange> = None;
+//     let mut current_charset_range = ViewRange::new();
+//     let mut prev_charset_range: Option<ViewRange> = None;
 
-    let mut payload_encoding: Option<&MimeEncoding> = None;
+//     let mut payload_encoding: Option<&MimeEncoding> = None;
 
-    for (n, (idx, chr)) in src.char_indices().enumerate() {
-        match parsing_state {
-            ParsingState::RawAscii => {
-                // match chr {
-                //     '=' => {},
-                // }
-            }
-            ParsingState::NewScan => {
-                match chr {
-                    '?' => {
-                        // Get the index of the next char (Taking UTF-8 varying char sizes into account)
-                        current_charset_range.start = idx + chr.len_utf8();
+//     for (n, (idx, chr)) in src.char_indices().enumerate() {
+//         match parsing_state {
+//             ParsingState::RawAscii => {
+//                 // match chr {
+//                 //     '=' => {},
+//                 // }
+//             }
+//             ParsingState::NewScan => {
+//                 match chr {
+//                     '?' => {
+//                         // Get the index of the next char (Taking UTF-8 varying char sizes into account)
+//                         current_charset_range.start = idx + chr.len_utf8();
 
-                        parsing_state = ParsingState::ScanningCharset
-                    }
-                    _ => {}
-                }
-            }
-            ParsingState::ScanningCharset => {
-                match chr {
-                    '?' => {
-                        // Get the final and exclusive index of the current char (Taking UTF-8 varying char sizes into account)
-                        // current_charset_range.end = idx + chr.len_utf8();
-                        current_charset_range.end = idx;
+//                         parsing_state = ParsingState::ScanningCharset
+//                     }
+//                     _ => {}
+//                 }
+//             }
+//             ParsingState::ScanningCharset => {
+//                 match chr {
+//                     '?' => {
+//                         // Get the final and exclusive index of the current char (Taking UTF-8 varying char sizes into account)
+//                         // current_charset_range.end = idx + chr.len_utf8();
+//                         current_charset_range.end = idx;
 
-                        // We now have a viewable charset.
-                        // log::debug!("Current charset: {}", current_charset_range.view(&src));
+//                         // We now have a viewable charset.
+//                         // log::debug!("Current charset: {}", current_charset_range.view(&src));
 
-                        // Has the charset changed? If so, decode our current progress into the final result before proceeding.
-                        if let Some(p) = prev_charset_range {
-                            if p.view(src).to_uppercase()
-                                != current_charset_range.view(src).to_uppercase()
-                            {
-                                // log::debug!("Previous charset: {}", p.view(&src));
-                                let payload = match attempt_decode(&decoded_payload, p.view(src)) {
-                                    Ok(p) => p,
-                                    Err(e) => return Err(ParsingError::DecodingCharset(e.0)),
-                                };
+//                         // Has the charset changed? If so, decode our current progress into the final result before proceeding.
+//                         if let Some(p) = prev_charset_range {
+//                             if p.view(src).to_uppercase()
+//                                 != current_charset_range.view(src).to_uppercase()
+//                             {
+//                                 // log::debug!("Previous charset: {}", p.view(&src));
+//                                 let payload = match attempt_decode(&decoded_payload, p.view(src)) {
+//                                     Ok(p) => p,
+//                                     Err(e) => return Err(ParsingError::DecodingCharset(e.0)),
+//                                 };
 
-                                decoded_payload.clear();
+//                                 decoded_payload.clear();
 
-                                final_result.push_str(&payload);
-                            }
-                        }
+//                                 final_result.push_str(&payload);
+//                             }
+//                         }
 
-                        prev_charset_range = Some(current_charset_range);
+//                         prev_charset_range = Some(current_charset_range);
 
-                        parsing_state = ParsingState::ScanningEncoding
-                    }
-                    _ => {}
-                }
-            }
-            ParsingState::ScanningEncoding => {
-                match chr {
-                    '?' => {
-                        match payload_encoding {
-                            Some(encoding) => {
-                                parsing_state = ParsingState::ScanningPayload(encoding)
-                            }
-                            None => return Ok(src.to_owned()), // TODO: Return `Cow`
-                        }
-                    }
-                    'B' | 'b' => payload_encoding = Some(&MimeEncoding::Base64Encoding),
-                    'Q' | 'q' => payload_encoding = Some(&MimeEncoding::QEncoding),
-                    _ => {}
-                }
-            }
-            ParsingState::ScanningPayload(encoding) => {
-                match encoding {
-                    MimeEncoding::Base64Encoding => {
-                        match chr {
-                            '\\' => { /* Just ignore and cancel the backslash */ }
-                            '?' => {
-                                // log::debug!("Base64: {encoded_payload}");
-                                let payload = match base64::decode(&encoded_payload) {
-                                    Ok(p) => p,
-                                    Err(e) => return Err(ParsingError::DecodingBase64(e)),
-                                };
+//                         parsing_state = ParsingState::ScanningEncoding
+//                     }
+//                     _ => {}
+//                 }
+//             }
+//             ParsingState::ScanningEncoding => {
+//                 match chr {
+//                     '?' => {
+//                         match payload_encoding {
+//                             Some(encoding) => {
+//                                 parsing_state = ParsingState::ScanningPayload(encoding)
+//                             }
+//                             None => return Ok(src.to_owned()), // TODO: Return `Cow`
+//                         }
+//                     }
+//                     'B' | 'b' => payload_encoding = Some(&MimeEncoding::Base64Encoding),
+//                     'Q' | 'q' => payload_encoding = Some(&MimeEncoding::QEncoding),
+//                     _ => {}
+//                 }
+//             }
+//             ParsingState::ScanningPayload(encoding) => {
+//                 match encoding {
+//                     MimeEncoding::Base64Encoding => {
+//                         match chr {
+//                             '\\' => { /* Just ignore and cancel the backslash */ }
+//                             '?' => {
+//                                 // log::debug!("Base64: {encoded_payload}");
+//                                 let payload = match base64::decode(&encoded_payload) {
+//                                     Ok(p) => p,
+//                                     Err(e) => return Err(ParsingError::DecodingBase64(e)),
+//                                 };
 
-                                encoded_payload.clear();
+//                                 encoded_payload.clear();
 
-                                decoded_payload.extend(payload);
+//                                 decoded_payload.extend(payload);
 
-                                parsing_state = ParsingState::NewScan
-                            }
-                            _ => encoded_payload.push(chr),
-                        }
-                    }
-                    MimeEncoding::QEncoding => {
-                        match chr {
-                            // Great news about Q encoding the `?` and `=` chars: "The ASCII codes
-                            // for the question mark ("?") and equals sign ("=") may not be represented
-                            // directly as they are used to delimit the encoded-word."
-                            // "..The ASCII code for space may not be represented directly because it
-                            // could cause older parsers to split up the encoded word undesirably.
-                            // To make the encoding smaller and easier to read the underscore is used to
-                            // represent the ASCII code for space creating the side effect that underscore
-                            // cannot be represented directly." -- Wikipedia
-                            '\\' => {
-                                if let Some(next_chr) = src.chars().nth(n + 1) {
-                                    match next_chr {
-                                        '=' => { /* Just ignore and cancel the backslash */ }
-                                        _ => encoded_payload.push('\\'),
-                                    }
-                                }
-                            }
-                            '_' => encoded_payload.push(' '),
-                            '?' => {
-                                // log::debug!("Q-Encoding: {encoded_payload}");
-                                let payload = match quoted_printable::decode(
-                                    &encoded_payload,
-                                    quoted_printable::ParseMode::Robust,
-                                ) {
-                                    Ok(p) => p,
-                                    Err(e) => return Err(ParsingError::QDecoding(e)),
-                                };
+//                                 parsing_state = ParsingState::NewScan
+//                             }
+//                             _ => encoded_payload.push(chr),
+//                         }
+//                     }
+//                     MimeEncoding::QEncoding => {
+//                         match chr {
+//                             // Great news about Q encoding the `?` and `=` chars: "The ASCII codes
+//                             // for the question mark ("?") and equals sign ("=") may not be represented
+//                             // directly as they are used to delimit the encoded-word."
+//                             // "..The ASCII code for space may not be represented directly because it
+//                             // could cause older parsers to split up the encoded word undesirably.
+//                             // To make the encoding smaller and easier to read the underscore is used to
+//                             // represent the ASCII code for space creating the side effect that underscore
+//                             // cannot be represented directly." -- Wikipedia
+//                             '\\' => {
+//                                 if let Some(next_chr) = src.chars().nth(n + 1) {
+//                                     match next_chr {
+//                                         '=' => { /* Just ignore and cancel the backslash */ }
+//                                         _ => encoded_payload.push('\\'),
+//                                     }
+//                                 }
+//                             }
+//                             '_' => encoded_payload.push(' '),
+//                             '?' => {
+//                                 // log::debug!("Q-Encoding: {encoded_payload}");
+//                                 let payload = match quoted_printable::decode(
+//                                     &encoded_payload,
+//                                     quoted_printable::ParseMode::Robust,
+//                                 ) {
+//                                     Ok(p) => p,
+//                                     Err(e) => return Err(ParsingError::QDecoding(e)),
+//                                 };
 
-                                encoded_payload.clear();
+//                                 encoded_payload.clear();
 
-                                decoded_payload.extend(payload);
+//                                 decoded_payload.extend(payload);
 
-                                parsing_state = ParsingState::NewScan;
-                            }
-                            _ => encoded_payload.push(chr),
-                        }
-                    }
-                }
-            }
-        }
-    }
+//                                 parsing_state = ParsingState::NewScan;
+//                             }
+//                             _ => encoded_payload.push(chr),
+//                         }
+//                     }
+//                 }
+//             }
+//         }
+//     }
 
-    let payload = match attempt_decode(&decoded_payload, current_charset_range.view(src)) {
-        Ok(p) => p,
-        Err(e) => return Err(ParsingError::DecodingCharset(e.0)),
-    };
+//     let payload = match attempt_decode(&decoded_payload, current_charset_range.view(src)) {
+//         Ok(p) => p,
+//         Err(e) => return Err(ParsingError::DecodingCharset(e.0)),
+//     };
 
-    final_result.push_str(&payload);
+//     final_result.push_str(&payload);
 
-    Ok(final_result)
-}
+//     Ok(final_result)
+// }
 
 pub struct PatternsCache {
     map: HashMap<String, Regex>,
