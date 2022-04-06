@@ -1,6 +1,6 @@
 use actix_web::{get, post, web, HttpResponse, Responder};
 use mailparse::parse_header;
-use serde::Deserialize;
+use serde_derive::Deserialize;
 
 use crate::utils;
 use crate::DEFAULT_CHARSET;
@@ -36,7 +36,7 @@ pub async fn unescape(req_body: String) -> impl Responder {
 
     let response = utils::attempt_decode(&unescaped_req_body, DEFAULT_CHARSET).unwrap();
 
-    HttpResponse::Ok().body(response)
+    HttpResponse::Ok().body(response.into_owned())
 }
 
 #[post("/unescape/{charset}")]
@@ -49,7 +49,7 @@ pub async fn unescape_charset(
 
     let response = utils::attempt_decode(&unescaped_req_body, &charset).unwrap();
 
-    HttpResponse::Ok().body(response)
+    HttpResponse::Ok().body(response.into_owned())
 }
 
 #[post("/decode_quoted_printable")]
@@ -65,7 +65,7 @@ pub async fn decode_quoted_printable(req_body: String) -> impl Responder {
 
     let response = utils::decode_quoted_printable(req_body, DEFAULT_CHARSET);
 
-    HttpResponse::Ok().body(response)
+    HttpResponse::Ok().body(response.into_owned())
 }
 
 #[post("/decode_quoted_printable/{charset}")]
@@ -78,7 +78,7 @@ pub async fn decode_quoted_printable_charset(
         Err(_) => return HttpResponse::Ok().body(req_body),
     };
 
-    HttpResponse::Ok().body(response)
+    HttpResponse::Ok().body(response.into_owned())
 }
 
 #[post("/decode_base64")]
@@ -87,7 +87,7 @@ pub async fn decode_base64(req_body: String) -> impl Responder {
 
     let response = utils::attempt_decode(&raw_payload, DEFAULT_CHARSET).unwrap();
 
-    HttpResponse::Ok().body(response)
+    HttpResponse::Ok().body(response.into_owned())
 }
 
 #[post("/decode_base64/{charset}")]
@@ -99,7 +99,7 @@ pub async fn decode_base64_charset(
 
     let response = utils::attempt_decode(&raw_payload, &charset).unwrap();
 
-    HttpResponse::Ok().body(response)
+    HttpResponse::Ok().body(response.into_owned())
 }
 
 #[post("/decode_mime_header")]
@@ -118,7 +118,7 @@ pub async fn decode_mime_header(req_body: String) -> impl Responder {
 
     let response = utils::decode_mime_header(&normalized_req_body);
 
-    HttpResponse::Ok().body(response)
+    HttpResponse::Ok().body(response.into_owned())
 }
 
 #[post("/decode_mime_header/rfc822")]
@@ -132,7 +132,7 @@ pub async fn decode_mime_header_rfc822(req_body: web::Bytes) -> impl Responder {
 pub async fn decode_auto(req_body: String) -> impl Responder {
     let response = utils::auto_decode(req_body, DEFAULT_CHARSET);
 
-    HttpResponse::Ok().body(response)
+    HttpResponse::Ok().body(response.into_owned())
 }
 
 #[post("/decode_auto/{charset}")]
@@ -142,7 +142,7 @@ pub async fn decode_auto_charset(
 ) -> impl Responder {
     let response = utils::auto_decode(req_body, &charset);
 
-    HttpResponse::Ok().body(response)
+    HttpResponse::Ok().body(response.into_owned())
 }
 
 #[post("/regex_capture_group")]

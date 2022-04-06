@@ -6,6 +6,7 @@ use regex::Regex;
 use std::borrow::Cow;
 use std::char;
 use std::collections::VecDeque;
+use std::error::Error;
 use std::{collections::HashMap, usize};
 
 // use std::string::FromUtf8Error;
@@ -28,11 +29,11 @@ pub const DEFAULT_DECODER_TRAP: DecoderTrap = DecoderTrap::Replace;
 
 pub type DecodingResult<'src> = Result<Cow<'src, str>, Cow<'static, str>>;
 
-impl<'src> From<std::str::Utf8Error> for DecodingResult<'src> {
-    fn from(_: std::str::Utf8Error) -> Self {
-        todo!()
-    }
-}
+// impl<'src> From<std::str::Utf8Error> for DecodingResult<'src> {
+//     fn from(_: std::str::Utf8Error) -> Self {
+//         todo!()
+//     }
+// }
 
 // pub type UTF8Result = Result<UTF8String, FromUtf8Error>;
 
@@ -406,7 +407,7 @@ pub fn attempt_decode<'src, 'encoding>(
         // Err(_) => match decode_bytes(src, &CFG.common.alt_encoding, DEFAULT_DECODER_TRAP) {
         Err(_) => match decode_bytes(src, &CFG.common.alt_encoding, DEFAULT_DECODER_TRAP) {
             Ok(alt_result) => alt_result,
-            Err(_) => String::from_utf8_lossy(src).to_string(),
+            Err(_) => Cow::Owned(String::from_utf8_lossy(src).to_string()),
         },
     })
 }
@@ -437,7 +438,7 @@ pub fn normalize_str(string: &str) -> Cow<'_, str> {
 
 pub fn decode_mime_header(src: &str) -> Cow<'_, str> {
     if !src.contains("=?") && !src.contains("\\x") && !src.contains("\\u") {
-        Cow::Borrowed(src);
+        Cow::Borrowed(src)
     } else {
         // Decoding usually means the decoded data is smaller or about the same in size as it does not include any MIME header special symbols.
         let mut result = String::with_capacity(src.len());
@@ -466,14 +467,22 @@ pub fn decode_mime_header(src: &str) -> Cow<'_, str> {
     }
 }
 
-pub fn decode_quoted_printable(src: String, charset: &str) -> String {
+// pub fn decode_quoted_printable(src: String, charset: &str) -> String {
+pub fn decode_quoted_printable<'src, 'charset>(
+    src: &'src str,
+    charset: &'charset str,
+) -> Cow<'src, str>
+// where
+//     'charset: 'src,
+{
     match quoted_printable::decode(&src, quoted_printable::ParseMode::Robust) {
         Ok(v) => attempt_decode(&v, charset).unwrap(),
-        Err(_) => src,
+        Err(_) => Cow::Borrowed(src),
     }
 }
 
-pub fn auto_decode(src: String, charset: &str) -> String {
+// pub fn auto_decode(src: String, charset: &str) -> String {
+pub fn auto_decode<'src, 'charset>(src: &'src str, charset: &'charset str) -> Cow<'src, str> {
     let src_normalized = normalize_str(&src);
 
     let src_normalized_upper = src_normalized.to_uppercase();
@@ -529,7 +538,7 @@ pub enum ParsingError {
     QDecoding(QuotedPrintableError),
 }
 
-impl Error for ParsingError {}
+// impl Error for ParsingError {}
 
 // pub fn decode_mime_subject(src: &str) -> DecodingResult {
 pub fn manual_decode_mime_subject(src: &str) -> Result<String, ParsingError> {
