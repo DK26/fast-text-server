@@ -327,15 +327,22 @@ impl Config {
 
 // } // impl
 
+#[inline]
 fn default_common_config() -> CommonConfig {
     CommonConfig::default()
 }
+
+#[inline]
 fn default_service_config() -> ServiceConfig {
     ServiceConfig::default()
 }
+
+#[inline]
 fn default_cache_config() -> CacheConfig {
     CacheConfig::default()
 }
+
+#[inline]
 fn default_logger_config() -> LoggerConfig {
     LoggerConfig::default()
 }
