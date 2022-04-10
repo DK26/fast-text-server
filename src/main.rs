@@ -20,10 +20,12 @@ use utils::PatternsCache;
 
 #[allow(clippy::too_many_lines)]
 fn init_arg_matches() -> ArgMatches {
-    let about = format!("{description}\n\n Author: {author}\n Source: {source}", 
-        description = "Fast Webhooks is a lightweight, high capacity and reliable remote function server which provides REST API services for processing, modifying, re-encoding and matching on UTF-8 data.",
+    let about = format!(
+        "{description}\n\n Author: {author}\n Source: {source}\n License: {license}",
+        description = env!("CARGO_PKG_DESCRIPTION"),
         author = env!("CARGO_PKG_AUTHORS"),
-        source = "https://github.com/DK26/fast-webhooks",
+        source = env!("CARGO_PKG_REPOSITORY"),
+        license = env!("CARGO_PKG_LICENSE")
     );
 
     clap::Command::new(env!("CARGO_PKG_NAME"))
