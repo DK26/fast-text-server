@@ -23,7 +23,7 @@ fn init_arg_matches() -> ArgMatches {
         source = "https://github.com/DK26/fast-webhooks",
     );
 
-    clap::App::new(env!("CARGO_PKG_NAME"))
+    clap::Command::new(env!("CARGO_PKG_NAME"))
         .version(env!("CARGO_PKG_VERSION"))
         .about(about.as_str())
         .arg(
