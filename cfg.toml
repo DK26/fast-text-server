@@ -37,7 +37,7 @@
 
     # Sets server connection shutdown timeout in N milliseconds. 
     # To disable timeout set value to 0. (Default: 5000)
-    client_shutdown = 5000  # TODO: Rename to `client_disconnect_timeout`
+    client_disconnect_timeout = 5000
 
     # Sets the timeout for graceful workers shutdown in N seconds. 
     # (Default: 30)
