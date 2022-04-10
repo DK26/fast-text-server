@@ -477,15 +477,15 @@ pub fn decode_mime_header(src: &str) -> DecodingResult {
                 let prefixed_line = format!(":{trimmed_line}");
                 let (parsed, _) = mailparse::parse_header(prefixed_line.as_bytes()).unwrap();
 
-                result.push_str(&parsed.get_value())
+                result.push_str(&parsed.get_value());
             } else if trimmed_line.contains("\\x") || trimmed_line.contains("\\u") {
                 let unescaped_line_bytes = unescape_as_bytes(trimmed_line).unwrap();
                 let unescaped_line =
                     attempt_decode(&unescaped_line_bytes, DEFAULT_CHARSET).unwrap();
 
-                result.push_str(&unescaped_line)
+                result.push_str(&unescaped_line);
             } else {
-                result.push_str(trimmed_line)
+                result.push_str(trimmed_line);
             }
         }
         Ok(Cow::Owned(result))
@@ -522,7 +522,7 @@ pub fn decode_quoted_printable<'src, 'charset>(
 // pub fn auto_decode(src: String, charset: &str) -> String {
 // pub fn auto_decode<'src, 'charset>(src: &'src str, charset: &'charset str) -> Cow<'src, str> {
 pub fn auto_decode<'src, 'charset>(src: &'src str, charset: &'charset str) -> DecodingResult<'src> {
-    let src_normalized = normalize_str(&src);
+    let src_normalized = normalize_str(src);
 
     let src_normalized_upper = src_normalized.to_uppercase();
 

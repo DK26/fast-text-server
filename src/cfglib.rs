@@ -23,6 +23,7 @@ impl std::fmt::Display for CfgFileError {
 impl std::error::Error for CfgFileError {}
 
 #[derive(Debug)]
+#[allow(dead_code)]
 pub enum ConfigError {
     BadArgument(String),
     FileError(CfgFileError),
