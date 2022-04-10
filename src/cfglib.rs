@@ -213,7 +213,7 @@ impl BitOr for Config {
 
     /// Usage: `args_config | cfg_file_config | default_config`
     /// Left item as the highest priority
-    fn bitor(self, rhs: Self) -> Self::Output {
+    fn bitor(self, _rhs: Self) -> Self::Output {
         // TODO: If there is None and a None, assign None
         // TODO: If there is None and a Some, assign Some
         // TODO: If there is Some and a Some, assign the first Some
@@ -223,55 +223,59 @@ impl BitOr for Config {
 
 impl Config {
     pub fn mix_from_arg_matches(
-        arg_matches: ArgMatches,
+        arg_matches: &ArgMatches,
         base: Config,
     ) -> Result<Self, ConfigError> {
         Ok(
             Self {
                 service: ServiceConfig {
-                    listen: parse_arg(&arg_matches, "listen", || base.service.listen)?,
-                    server_hostname: parse_arg(&arg_matches, "server_hostname", || {
+                    listen: parse_arg(arg_matches, "listen", || base.service.listen)?,
+                    server_hostname: parse_arg(arg_matches, "server_hostname", || {
                         base.service.server_hostname
                     })?,
-                    workers: parse_arg(&arg_matches, "workers", || base.service.workers)?,
-                    backlog: parse_arg(&arg_matches, "backlog", || base.service.backlog)?,
-                    max_connections: parse_arg(&arg_matches, "max_connections", || {
+                    workers: parse_arg(arg_matches, "workers", || base.service.workers)?,
+                    backlog: parse_arg(arg_matches, "backlog", || base.service.backlog)?,
+                    max_connections: parse_arg(arg_matches, "max_connections", || {
                         base.service.max_connections
                     })?,
-                    max_connection_rate: parse_arg(&arg_matches, "max_connection_rate", || {
+                    max_connection_rate: parse_arg(arg_matches, "max_connection_rate", || {
                         base.service.max_connection_rate
                     })?,
-                    keep_alive: parse_arg(&arg_matches, "keep_alive", || base.service.keep_alive)?,
-                    client_timeout: parse_arg(&arg_matches, "client_timeout", || {
-                        base.service.client_timeout
-                    })?,
-                    client_shutdown: parse_arg(&arg_matches, "client_shutdown", || {
-                        base.service.client_shutdown
-                    })?,
-                    shutdown_timeout: parse_arg(&arg_matches, "shutdown_timeout", || {
+                    keep_alive: parse_arg(arg_matches, "keep_alive", || base.service.keep_alive)?,
+                    client_request_timeout: parse_arg(
+                        arg_matches,
+                        "client_request_timeout",
+                        || base.service.client_request_timeout,
+                    )?,
+                    client_disconnect_timeout: parse_arg(
+                        arg_matches,
+                        "client_disconnect_timeout",
+                        || base.service.client_disconnect_timeout,
+                    )?,
+                    shutdown_timeout: parse_arg(arg_matches, "shutdown_timeout", || {
                         base.service.shutdown_timeout
                     })?,
                 },
 
                 common: CommonConfig {
-                    alt_encoding: parse_arg(&arg_matches, "alt_encoding", || {
-                        base.common.alt_encoding
+                    fallback_encoding: parse_arg(arg_matches, "fallback_encoding", || {
+                        base.common.fallback_encoding
                     })?,
                 },
 
                 cache: CacheConfig {
-                    regex_patterns_limit: parse_arg(&arg_matches, "regex_patterns_limit", || {
+                    regex_patterns_limit: parse_arg(arg_matches, "regex_patterns_limit", || {
                         base.cache.regex_patterns_limit
                     })?,
                     regex_patterns_capacity: parse_arg(
-                        &arg_matches,
+                        arg_matches,
                         "regex_patterns_capacity",
                         || base.cache.regex_patterns_capacity,
                     )?,
                 },
 
                 logger: LoggerConfig {
-                    log_level: parse_arg(&arg_matches, "log_level", || base.logger.log_level)?,
+                    log_level: parse_arg(arg_matches, "log_level", || base.logger.log_level)?,
                 },
             }, // Self
         ) // Ok()
@@ -337,19 +341,20 @@ fn default_logger_config() -> LoggerConfig {
 
 #[derive(Deserialize, Debug)]
 pub struct CommonConfig {
-    #[serde(default = "default_common_alt_encoding")]
-    pub alt_encoding: String,
+    #[serde(default = "default_common_fallback_encoding")]
+    pub fallback_encoding: String,
 }
 
 impl Default for CommonConfig {
     fn default() -> Self {
         Self {
-            alt_encoding: default_common_alt_encoding(),
+            fallback_encoding: default_common_fallback_encoding(),
         }
     }
 }
 
-fn default_common_alt_encoding() -> String {
+#[inline]
+fn default_common_fallback_encoding() -> String {
     "utf-8".into()
 }
 
@@ -365,7 +370,7 @@ pub struct ServiceConfig {
     pub workers: usize,
 
     #[serde(default = "default_service_backlog")]
-    pub backlog: i32,
+    pub backlog: u32,
 
     #[serde(default = "default_service_max_connections")]
     pub max_connections: usize,
@@ -374,13 +379,13 @@ pub struct ServiceConfig {
     pub max_connection_rate: usize,
 
     #[serde(default = "default_service_keep_alive")]
-    pub keep_alive: usize,
+    pub keep_alive: u64,
 
-    #[serde(default = "default_service_client_timeout")]
-    pub client_timeout: u64,
+    #[serde(default = "default_service_client_request_timeout")]
+    pub client_request_timeout: u64,
 
-    #[serde(default = "default_service_client_shutdown")]
-    pub client_shutdown: u64,
+    #[serde(default = "default_service_client_disconnect_timeout")]
+    pub client_disconnect_timeout: u64,
 
     #[serde(default = "default_service_shutdown_timeout")]
     pub shutdown_timeout: u64,
@@ -396,41 +401,60 @@ impl Default for ServiceConfig {
             max_connections: default_service_max_connections(),
             max_connection_rate: default_service_max_connection_rate(),
             keep_alive: default_service_keep_alive(),
-            client_timeout: default_service_client_timeout(),
-            client_shutdown: default_service_client_shutdown(),
+            client_request_timeout: default_service_client_request_timeout(),
+            client_disconnect_timeout: default_service_client_disconnect_timeout(),
             shutdown_timeout: default_service_shutdown_timeout(),
         }
     }
 }
 
+#[inline]
 fn default_service_listen() -> String {
     "127.0.0.1:8080".into()
 }
+
+#[inline]
 fn default_service_server_hostname() -> String {
     "localhost".into()
 }
+
+#[inline]
 fn default_service_workers() -> usize {
     num_cpus::get()
 }
-fn default_service_backlog() -> i32 {
+
+#[inline]
+const fn default_service_backlog() -> u32 {
     2048
 }
-fn default_service_max_connections() -> usize {
+
+#[inline]
+const fn default_service_max_connections() -> usize {
     25_000
 }
-fn default_service_max_connection_rate() -> usize {
+
+#[inline]
+const fn default_service_max_connection_rate() -> usize {
     256
 }
-fn default_service_keep_alive() -> usize {
+
+#[inline]
+const fn default_service_keep_alive() -> u64 {
     5
 }
-fn default_service_client_timeout() -> u64 {
+
+#[inline]
+const fn default_service_client_request_timeout() -> u64 {
     5_000
 }
-fn default_service_client_shutdown() -> u64 {
+
+#[inline]
+const fn default_service_client_disconnect_timeout() -> u64 {
     5_000
 }
-fn default_service_shutdown_timeout() -> u64 {
+
+#[inline]
+const fn default_service_shutdown_timeout() -> u64 {
     30
 }
 
@@ -452,10 +476,13 @@ impl Default for CacheConfig {
     }
 }
 
-fn default_regex_patterns_limit() -> usize {
+#[inline]
+const fn default_regex_patterns_limit() -> usize {
     10000
 }
-fn default_regex_patterns_capacity() -> usize {
+
+#[inline]
+const fn default_regex_patterns_capacity() -> usize {
     10000
 }
 
@@ -473,6 +500,7 @@ impl Default for LoggerConfig {
     }
 }
 
+#[inline]
 pub fn default_logger_level() -> String {
     "info".into()
 }

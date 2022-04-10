@@ -1,6 +1,6 @@
 [package]
 name = "fast-text-server"
-version = "0.1.5"
+version = "0.2.0"
 authors = ["David Krasnitsky <dikaveman@gmail.com>"]
 edition = "2021"
 

@@ -33,11 +33,11 @@
     # Sets server client timeout in N milliseconds for
     # the first request. To disable timeout set value to 0. 
     # (Default: 5000)
-    client_timout = 5000
+    client_request_timeout = 5000
 
     # Sets server connection shutdown timeout in N milliseconds. 
     # To disable timeout set value to 0. (Default: 5000)
-    client_shutdown = 5000
+    client_shutdown = 5000  # TODO: Rename to `client_disconnect_timeout`
 
     # Sets the timeout for graceful workers shutdown in N seconds. 
     # (Default: 30)
@@ -50,7 +50,7 @@
     # Sets the alternative encoding for decoding, in case decoding
     # with the default UTF-8 fails. (Default: UTF-8 [lossy])
     # If decoding to UTF-8 fails, this one is attempted instead.
-    alt_encoding = "utf-8"   # TODO: change name to `fallback_encoding`
+    fallback_encoding = "utf-8" 
 
 
 # Any cache related configurations.

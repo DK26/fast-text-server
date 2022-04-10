@@ -6,7 +6,7 @@ use regex::Regex;
 use std::borrow::Cow;
 use std::char;
 use std::collections::VecDeque;
-use std::error::Error;
+// use std::error::Error;
 use std::{collections::HashMap, usize};
 
 // use std::string::FromUtf8Error;
@@ -421,7 +421,7 @@ fn unescape_octal_no_leading(c: char, queue: &mut VecDeque<char>) -> Option<char
 }
 
 /// Attempt to decode given `src` bytes slice into a given encoding format.
-/// If fails, attempt to use alternative encoding `alt_encoding` from `cfg.toml`.
+/// If fails, attempt to use alternative encoding `fallback_encoding` from `cfg.toml`.
 /// If that fails, return a lossy UTF-8.
 /// TODO: Replace `DecodingResult` with `String` or `Cow<'_, str>`; This function cannot fail.
 pub fn attempt_decode<'src, 'encoding>(
@@ -431,7 +431,7 @@ pub fn attempt_decode<'src, 'encoding>(
     Ok(match decode_bytes(src, encoding, DEFAULT_DECODER_TRAP) {
         Ok(result) => result,
         // Err(_) => match decode_bytes(src, &CFG.common.alt_encoding, DEFAULT_DECODER_TRAP) {
-        Err(_) => match decode_bytes(src, &CFG.common.alt_encoding, DEFAULT_DECODER_TRAP) {
+        Err(_) => match decode_bytes(src, &CFG.common.fallback_encoding, DEFAULT_DECODER_TRAP) {
             Ok(alt_result) => alt_result,
             Err(_) => Cow::Owned(String::from_utf8_lossy(src).to_string()),
         },

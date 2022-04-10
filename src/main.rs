@@ -8,14 +8,17 @@ mod cfglib;
 mod services;
 mod utils;
 
+use std::time::Duration;
+
 use parking_lot::RwLock;
 
 use actix_web::{App, HttpServer};
-use cfglib::*;
+use cfglib::{CfgFileError, Config, RelativeFilePath};
 use clap::{Arg, ArgMatches};
 use simple_logger::SimpleLogger;
 use utils::PatternsCache;
 
+#[allow(clippy::too_many_lines)]
 fn init_arg_matches() -> ArgMatches {
     let about = format!("{description}\n\n Author: {author}\n Source: {source}", 
         description = "Fast Webhooks is a lightweight, high capacity and reliable remote function server which provides REST API services for processing, modifying, re-encoding and matching on UTF-8 data.",
@@ -107,12 +110,12 @@ fn init_arg_matches() -> ArgMatches {
                 .help("Sets the timeout for graceful workers shutdown in N seconds. (Default: 30)")
         )
         .arg(
-            Arg::new("alt_encoding")
+            Arg::new("fallback_encoding")
                 .short('a')
-                .long("alt_encoding")
+                .long("fallback_encoding")
                 .value_name("ENCODING")
                 .takes_value(true)
-                .help("Sets the alternative encoding for decoding, in case decoding with the default UTF-8 fails. (Default: UTF-8 [lossy])")
+                .help("Sets the fallback encoding to be used in case decoding with the default UTF-8 fails. (Default: UTF-8 [lossy])")
         )
         .arg(
             Arg::new("regex_patterns_limit")
@@ -188,7 +191,7 @@ lazy_static! {
         };
 
         // arg_matches.into()
-        Config::mix_from_arg_matches(arg_matches, cfg_file)
+        Config::mix_from_arg_matches(&arg_matches, cfg_file)
             .unwrap_or_else(|e| {
                 log::error!("{e}");
                 std::process::exit(1)
@@ -235,12 +238,18 @@ async fn main() -> std::io::Result<()> {
     log::debug!("max_connections = {}", CFG.service.max_connections);
     log::debug!("max_connection_rate = {}", CFG.service.max_connection_rate);
     log::debug!("keep_alive = {}", CFG.service.keep_alive);
-    log::debug!("client_timeout = {}", CFG.service.client_timeout);
-    log::debug!("client_shutdown = {}", CFG.service.client_shutdown);
+    log::debug!(
+        "client_request_timeout = {}",
+        CFG.service.client_request_timeout
+    );
+    log::debug!(
+        "client_disconnect_timeout = {}",
+        CFG.service.client_disconnect_timeout
+    );
     log::debug!("shutdown_timeout = {}", CFG.service.shutdown_timeout);
 
     // Common
-    log::debug!("alt_encoding = {}", CFG.common.alt_encoding);
+    log::debug!("fallback_encoding = {}", CFG.common.fallback_encoding);
 
     // Cache
     log::debug!(
@@ -276,9 +285,9 @@ async fn main() -> std::io::Result<()> {
     .backlog(CFG.service.backlog)
     .max_connections(CFG.service.max_connections)
     .max_connection_rate(CFG.service.max_connection_rate)
-    .keep_alive(CFG.service.keep_alive)
-    .client_timeout(CFG.service.client_timeout)
-    .client_shutdown(CFG.service.client_shutdown)
+    .keep_alive(Duration::from_secs(CFG.service.keep_alive))
+    .client_request_timeout(Duration::from_secs(CFG.service.client_request_timeout))
+    .client_disconnect_timeout(Duration::from_secs(CFG.service.client_disconnect_timeout))
     .shutdown_timeout(CFG.service.shutdown_timeout)
     .bind(&CFG.service.listen)?
     .run()
