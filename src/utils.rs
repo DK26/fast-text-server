@@ -30,7 +30,7 @@ pub const DEFAULT_DECODER_TRAP: DecoderTrap = DecoderTrap::Replace;
 #[derive(Debug)]
 pub struct DecodingError(Cow<'static, str>);
 
-pub type DecodingResult<'src> = Result<Cow<'src, str>, DecodingError>;
+pub type DecodingResult<'a> = Result<Cow<'a, str>, DecodingError>;
 // pub enum DecodingResult<'src> {
 //     Ok(Cow<'src, str>),
 //     Err(Cow<'static, str>),
