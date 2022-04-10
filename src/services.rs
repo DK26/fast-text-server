@@ -40,10 +40,8 @@ pub async fn unescape(req_body: String) -> impl Responder {
 }
 
 #[post("/unescape/{charset}")]
-pub async fn unescape_charset(
-    web::Path((charset,)): web::Path<(String,)>,
-    req_body: String,
-) -> impl Responder {
+pub async fn unescape_charset(path: web::Path<(String,)>, req_body: String) -> impl Responder {
+    let (charset,) = path.into_inner();
     let unescaped_req_body =
         utils::unescape_as_bytes(&req_body).expect("Unable to unescape request's body.");
 
@@ -70,9 +68,10 @@ pub async fn decode_quoted_printable(req_body: String) -> impl Responder {
 
 #[post("/decode_quoted_printable/{charset}")]
 pub async fn decode_quoted_printable_charset(
-    web::Path((charset,)): web::Path<(String,)>,
+    path: web::Path<(String,)>,
     req_body: String,
 ) -> impl Responder {
+    let (charset,) = path.into_inner();
     let response = match quoted_printable::decode(&req_body, quoted_printable::ParseMode::Robust) {
         Ok(v) => v,
         Err(_) => return HttpResponse::Ok().body(req_body),
@@ -93,10 +92,8 @@ pub async fn decode_base64(req_body: String) -> impl Responder {
 }
 
 #[post("/decode_base64/{charset}")]
-pub async fn decode_base64_charset(
-    web::Path((charset,)): web::Path<(String,)>,
-    req_body: String,
-) -> impl Responder {
+pub async fn decode_base64_charset(path: web::Path<(String,)>, req_body: String) -> impl Responder {
+    let (charset,) = path.into_inner();
     let raw_payload = base64::decode(&req_body).expect("Unable to decode base64.");
 
     let response = utils::attempt_decode(&raw_payload, &charset).unwrap();
@@ -138,10 +135,8 @@ pub async fn decode_auto(req_body: String) -> impl Responder {
 }
 
 #[post("/decode_auto/{charset}")]
-pub async fn decode_auto_charset(
-    web::Path((charset,)): web::Path<(String,)>,
-    req_body: String,
-) -> impl Responder {
+pub async fn decode_auto_charset(path: web::Path<(String,)>, req_body: String) -> impl Responder {
+    let (charset,) = path.into_inner();
     let response = utils::auto_decode(&req_body, &charset).unwrap();
 
     HttpResponse::Ok().body(response.into_owned())
