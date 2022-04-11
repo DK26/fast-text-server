@@ -158,11 +158,6 @@ lazy_static! {
 
         // Then, if there are no problems, continue from here
 
-        println!("{} {}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
-
-        log::info!("Initializing service...");
-
-
         let cfg_file_path = RelativeFilePath::new("cfg.toml");
 
         let cfg_file = match Config::try_from(cfg_file_path.clone()) {
@@ -229,7 +224,16 @@ async fn main() -> std::io::Result<()> {
         }
     };
 
+    println!(
+        "{name} {version} | Listening on {interface}",
+        name = env!("CARGO_PKG_NAME"),
+        version = env!("CARGO_PKG_VERSION"),
+        interface = CFG.service.listen
+    );
+
     log::set_max_level(log_level);
+
+    log::info!("Initialized service...");
 
     // Configurations
     // Service
