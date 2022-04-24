@@ -1,6 +1,6 @@
 use actix_web::{get, post, web, HttpResponse, Responder};
 use mailparse::parse_header;
-use serde_derive::Deserialize;
+use serde::Deserialize;
 
 use crate::utils;
 use crate::DEFAULT_CHARSET;

@@ -1,5 +1,5 @@
 use clap::ArgMatches;
-use serde_derive::Deserialize;
+use serde::Deserialize;
 use std::env::current_exe;
 use std::ops::BitOr;
 use std::path::{Path, PathBuf};
