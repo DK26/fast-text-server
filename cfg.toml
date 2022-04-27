@@ -12,7 +12,7 @@
     server_hostname = "localhost"
 
     # Sets the N number of workers. (Default: Not defined.
-    # Automatically assigned the number of logical CPU's)
+    # Automatically assigned the number of physical CPUs)
     # workers = 8
 
     # Sets the maximum N number of pending connections 

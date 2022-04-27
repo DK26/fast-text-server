@@ -428,7 +428,8 @@ fn default_service_server_hostname() -> String {
 
 #[inline]
 fn default_service_workers() -> usize {
-    num_cpus::get()
+    // num_cpus::get()          // Default for Actix-Web 3 (Virtual CPU count)
+    num_cpus::get_physical() // Default for Actix-Web 4 (Physical CPU count)
 }
 
 #[inline]
