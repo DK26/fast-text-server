@@ -40,18 +40,6 @@ impl std::fmt::Display for ConfigError {
 
 impl std::error::Error for ConfigError {}
 
-// impl From<std::io::Error> for CfgFileError {
-//     fn from(e: std::io::Error) -> Self {
-//         CfgFileError::UnknownFailure(e)
-//     }
-// }
-
-// enum OnParseError<T, F: Fn() -> T> {
-//     DefaultValue(T),
-//     DefaultFn(F),
-//     Panic,
-// }
-
 /// Attempts to parse a given argument into the assigned type. Exists the program on failure.
 // fn parse_arg<T: FromStr>(arg_matches: ArgMatches, arg: &str, default: fn() -> T, on_error: OnParseError<T, fn() -> T>) -> T {
 // fn parse_arg<T: FromStr>(arg_matches: ArgMatches, arg: &str, default: fn() -> T) -> T {
@@ -105,44 +93,6 @@ impl Default for Config {
         }
     }
 }
-
-// type FilePath<'a> = &'a dyn AsRef<Path>;
-
-// impl<'a> TryFrom<FilePath<'a>> for Config {
-
-//     type Error = CfgFileError;
-
-//     fn try_from(cfg_file: FilePath<'a>) -> Result<Self, Self::Error> {
-//         let exe_dir = current_exe()
-//             .unwrap()
-//             .parent()
-//             .unwrap()
-//             .to_owned();
-
-//         let toml_path = exe_dir.join(cfg_file);
-
-//         let file = File::open(&toml_path);
-
-//         match file {
-
-//             Ok(mut f) => {
-
-//                 let mut toml_contents= String::new();
-
-//                 if let Err(e) = f.read_to_string(&mut toml_contents) {
-//                     return Err(CfgFileError::FailedToReadCfgFile(e))
-//                 }
-
-//                 // Returns a `Config` object.
-//                 match toml::from_str(&toml_contents) {
-//                     Ok(r) => Ok(r),
-//                     Err(e) => Err(CfgFileError::FailedToParseCfgFile(e))
-//                 }
-//             }
-//             Err(e) => Err(CfgFileError::FailedToOpenCfgFile(e))
-//         }
-//     }
-// }
 
 /// Automatically produces a full path out of a relative path.
 /// e.g. `RelativeFilePath::new("cfg.toml")` allows us to get a reference (a `&Path` from `as_ref()`)
@@ -282,50 +232,6 @@ impl Config {
         ) // Ok()
     } // fn
 } // impl
-
-// TODO: A new: `impl From<ArgMatches> for Config`
-// TODO: `impl From<FilePath> for Config`
-// TODO: New Struct: `MixedConfig` (with `base`) or impl Some kind of Operator `+` / `-` for `Config`
-
-// impl From<ArgMatches> for Config {
-
-//     fn from(arg_matches: ArgMatches) -> Self {
-
-//         // let cfg_file_path = "cfg.toml";
-
-//         // // let cfg_file = match Config::from_file(cfg_file_path) {
-//         // let cfg_file = match Config::try_from(cfg_file_path.as_ref()) {
-
-//         //     Ok(cfg) => cfg,
-
-//         //     Err(cfg_file_error) => match cfg_file_error {
-
-//         //         CfgFileError::FailedToOpenCfgFile(e) =>  {
-//         //             log::warn!("Unable to load '{cfg_file_path}' file: {e}");
-//         //             Config::default()
-//         //         },
-
-//         //         CfgFileError::FailedToReadCfgFile(e) => {
-//         //             log::error!("Unable to load '{cfg_file_path}' contents: {e}");
-//         //             std::process::exit(1);
-//         //         },
-
-//         //         CfgFileError::FailedToParseCfgFile(e) => {
-//         //             log::error!("Failed to parse '{cfg_file_path}': {e}");
-//         //             std::process::exit(1);
-//         //         },
-//         //     }
-//         // };
-
-//         Config::mix_from_arg_matches(arg_matches, cfg_file)
-//             .unwrap_or_else(|e| {
-//                 log::error!("{e}");
-//                 std::process::exit(1)
-//             })
-
-//     } // fn
-
-// } // impl
 
 #[inline]
 fn default_common_config() -> CommonConfig {
