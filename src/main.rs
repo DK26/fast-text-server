@@ -53,7 +53,7 @@ fn init_arg_matches() -> ArgMatches {
                 .long("workers")
                 .value_name("N")
                 .takes_value(true)
-                .help("Sets the N number of workers. (Default: Logical CPUs count)")
+                .help("Sets the N number of workers. (Default: Physical CPUs count (if available) or, logical CPUs count)")
         )
         .arg(
             Arg::new("backlog")

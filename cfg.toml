@@ -11,8 +11,9 @@
     # url generation. (Default: localhost:8080)
     server_hostname = "localhost"
 
-    # Sets the N number of workers. (Default: Not defined.
-    # Automatically assigned the number of physical CPUs)
+    # Sets the N number of workers. 
+    # (Default: Automatically assigned the number of physical CPUs if available
+    # or the logical CPUs)
     # workers = 8
 
     # Sets the maximum N number of pending connections 
