@@ -169,7 +169,7 @@ lazy_static! {
                 CfgFileError::FailedToOpenCfgFile(e) =>  {
                     log::warn!("Configurations: Unable to load '{cfg_file_path}' file from: '{cfg_file_path:?}'");
                     log::warn!("Reason: '{e}'");
-                    log::warn!("Resolution: Running default configurations");
+                    log::warn!("Recovery: Running default configurations");
                     Config::default()
                 },
 
